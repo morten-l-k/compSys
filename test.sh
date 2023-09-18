@@ -16,6 +16,8 @@ printf "Hello, World!\n" > test_files/ascii.input
 printf "Hello, World!" > test_files/ascii2.input
 printf "Hello,\x00World!\n" > test_files/data.input
 printf "" > test_files/empty.input
+printf "This is \377n iso file" > test_files/iso.input
+printf "This is UTF because of the character: 你好" > test_files/utf.input
 ### TODO: Generate more test files ###
 
 
