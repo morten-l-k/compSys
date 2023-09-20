@@ -127,6 +127,7 @@ bool is_utf(FILE*arg) {
         if ((c > 255 && c <= 1114111) || (c > 127 && c < 160)) {
             return true;
         } else {
+            fseek(arg, 0, SEEK_SET);
             b = false;
         }
     }
