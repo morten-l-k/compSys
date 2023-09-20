@@ -62,6 +62,7 @@ bool is_empty(FILE* arg) {
     if (fgetc(arg) == EOF) {
         return true;
     } else {
+        fseek(arg, 0, SEEK_SET);
         return false;
     }   
 }
@@ -74,16 +75,20 @@ bool is_empty(FILE* arg) {
  * @return false 
  */
 bool is_ascii(FILE* arg) {
-    int c;
-    bool b = false;
-    while ((c = fgetc(arg)) != EOF) {
-        if((c < 7) || (c > 13 && c < 27) || (c > 27 && c < 32) || (c > 126)) {
-            return false;
-        } else {
-            b = true;
+    bool returnvalue = true; 
+    int c; 
+    while((c = fgetc(arg)) != EOF) {
+        if((c >= 0x07 && c <= 0x0D) || c == 0x1B || (c >= 0x20 && c <= 0x7E)) {
+            // Do nothing
+            //printf("Here: %d\n",c);
+        }
+        else {
+            returnvalue = false; 
+            fseek(arg, 0, SEEK_SET);
+            break; 
         }
     }
-    return b;
+    return returnvalue;
 }
 
 /**
@@ -99,6 +104,7 @@ bool is_iso(FILE* arg) {
     bool b = false;
     while ((c = fgetc(arg)) != EOF) {
         if((c < 7) || (c > 13 && c < 27) || (c > 27 && c < 32) || (c > 127 && c < 160) || (c > 255)){
+            fseek(arg, 0, SEEK_SET);
             return false;
         } else {
             b = true;
