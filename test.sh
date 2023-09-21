@@ -12,6 +12,7 @@ rm -f test_files/*
 
 
 echo "Generating test files.."
+# Ascii
 printf "Hello, World!\n" > test_files/ascii.input
 printf "Hello, World!" > test_files/ascii2.input
 printf "\x06 is not interval \x06" > test_files/ascii3.input
@@ -23,7 +24,7 @@ printf "109 is a number \x1B" > test_files/ascii7.input
 #ISO-8859
 printf "This is \377n iso file" > test_files/iso.input
 # UTF-8
-printf "This is UTF because of the character: 😀" > test_files/utf.input
+printf "This is UTF because of the character: 你好" > test_files/utf.input
 # Empty
 printf "" > test_files/empty.input
 # Data
