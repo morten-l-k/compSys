@@ -85,7 +85,6 @@ bool is_ascii(FILE* arg) {
         else {
             returnvalue = false; 
             fseek(arg, 0, SEEK_SET);
-            //printf("Exit is_ascii");
             break; 
         }
     }
@@ -111,7 +110,6 @@ bool is_iso(FILE* arg) {
         else {
             returnvalue = false; 
             fseek(arg, 0, SEEK_SET);
-            //printf("Exit is_iso");
             break; 
         }
     }
@@ -133,7 +131,6 @@ bool is_utf(FILE*arg) {
             return true;
         } else {
             fseek(arg, 0, SEEK_SET);
-            //printf("Exit is_utf");
             b = false;
             break;
         }
