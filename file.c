@@ -85,6 +85,7 @@ bool is_ascii(FILE* arg) {
         else {
             returnvalue = false; 
             fseek(arg, 0, SEEK_SET);
+            //printf("Exit is_ascii");
             break; 
         }
     }
@@ -101,16 +102,20 @@ bool is_ascii(FILE* arg) {
  */
 bool is_iso(FILE* arg) {
     int c;
-    bool b = false;
+    bool returnvalue = true;
     while ((c = fgetc(arg)) != EOF) {
-        if((c < 7) || (c > 13 && c < 27) || (c > 27 && c < 32) || (c > 127 && c < 160) || (c > 255)){
+        if((c >= 0x07 && c <= 0x0D) || c == 0x1B || (c >= 0x20 && c <= 0x7E) || (c >= 160 && c <= 255)) {
+            // Do nothing
+            //printf("Here: %d\n",c);
+        }
+        else {
+            returnvalue = false; 
             fseek(arg, 0, SEEK_SET);
-            return false;
-        } else {
-            b = true;
+            //printf("Exit is_iso");
+            break; 
         }
     }
-    return b;
+    return returnvalue;
 }
 
 /**
@@ -127,7 +132,10 @@ bool is_utf(FILE*arg) {
         if ((c > 255 && c <= 1114111) || (c > 127 && c < 160)) {
             return true;
         } else {
+            fseek(arg, 0, SEEK_SET);
+            //printf("Exit is_utf");
             b = false;
+            break;
         }
     }
     return b;
