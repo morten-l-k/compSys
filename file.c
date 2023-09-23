@@ -147,19 +147,24 @@ int count_utf_multiByte_characters(FILE *arg)
         {
             expectingAmountOfBytes = 0;
         }
-
+        bool wasMultiByteDisproven = false;
         for (int i = 0; i < expectingAmountOfBytes; i++)
         {
             int nextByte = protective_get_c(arg);
+            if(nextByte == EOF)
+                return multiByteCharacters;
             if ((nextByte & 0xC0) != 0x80)
             {
+                wasMultiByteDisproven = true;
                 fseek(arg, -expectingAmountOfBytes, SEEK_CUR);
                 break;
             }
-            multiByteCharacters = multiByteCharacters + 1; // todo a mistake
         }
+        if(!wasMultiByteDisproven && expectingAmountOfBytes > 0)
+            multiByteCharacters = multiByteCharacters + 1;
     }
     fseek(arg, 0, SEEK_SET);
+
     return multiByteCharacters;
 }
 
@@ -173,6 +178,7 @@ int count_utf_multiByte_characters(FILE *arg)
  */
 bool is_iso(FILE *arg)
 {
+
     int c;
 
     int multiByteCharacters = count_utf_multiByte_characters(arg);
@@ -230,6 +236,8 @@ bool is_utf(FILE *arg)
         for (int i = 0; i < expectingAmountOfBytes; i++)
         {
             int nextByte = protective_get_c(arg);
+            if(nextByte == EOF)
+                return false;
             if ((nextByte & 0xC0) != 0x80) // doesnt start with 10 as binary
             {
                 fseek(arg, 0, SEEK_SET);
