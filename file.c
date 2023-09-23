@@ -62,6 +62,14 @@ enum file_type find_format(FILE *arg)
         return DATA;
     }
 }
+int protective_get_c(FILE *arg)
+{
+    int fd = fileno(arg);
+    if (fd == 2) {
+        return -1;
+    }
+    return fgetc(arg);
+}
 
 /**
  * @brief Takes a pointer of FILE type and check if there is a character in file
@@ -72,7 +80,7 @@ enum file_type find_format(FILE *arg)
  */
 bool is_empty(FILE *arg)
 {
-    if (fgetc(arg) == EOF)
+    if (protective_get_c(arg) == EOF)
     {
         return true;
     }
@@ -93,7 +101,7 @@ bool is_empty(FILE *arg)
 bool is_ascii(FILE *arg)
 {
     int c;
-    while ((c = fgetc(arg)) != EOF)
+    while ((c = protective_get_c(arg)) != EOF)
     {
         bool isAscii = ((c >= 0x07 && c <= 0x0D) || c == 0x1B || (c >= 0x20 && c <= 0x7E));
         if (!isAscii)
@@ -117,7 +125,7 @@ int count_utf_multiByte_characters(FILE *arg)
     int c;
     int expectingAmountOfBytes = 0; // Assume UTF-8 until proven otherwise
 
-    while ((c = fgetc(arg)) != EOF)
+    while ((c = protective_get_c(arg)) != EOF)
     {
         if ((c & 0x80) == 0x00)
         { // 0
@@ -142,19 +150,18 @@ int count_utf_multiByte_characters(FILE *arg)
 
         for (int i = 0; i < expectingAmountOfBytes; i++)
         {
-            int nextByte = fgetc(arg);
+            int nextByte = protective_get_c(arg);
             if ((nextByte & 0xC0) != 0x80)
             {
                 fseek(arg, -expectingAmountOfBytes, SEEK_CUR);
                 break;
             }
-            multiByteCharacters = multiByteCharacters+1;
+            multiByteCharacters = multiByteCharacters + 1; // todo a mistake
         }
     }
     fseek(arg, 0, SEEK_SET);
     return multiByteCharacters;
 }
-
 
 /**
  * @brief Takes a pointer of FILE type and checks if characters in file is within range of iso
@@ -169,12 +176,12 @@ bool is_iso(FILE *arg)
     int c;
 
     int multiByteCharacters = count_utf_multiByte_characters(arg);
-    if(multiByteCharacters != 0)
+    if (multiByteCharacters != 0)
         return false;
-    while ((c = fgetc(arg)) != EOF)
+    while ((c = protective_get_c(arg)) != EOF)
     {
         bool isAscii = (c >= 0x07 && c <= 0x0D) || c == 0x1B || (c >= 0x20 && c <= 0x7E);
-        bool isIso =  isAscii || (c >= 0xA0 && c <= 0xFF);
+        bool isIso = isAscii || (c >= 0xA0 && c <= 0xFF);
         if (!isIso)
         {
             fseek(arg, 0, SEEK_SET);
@@ -184,8 +191,6 @@ bool is_iso(FILE *arg)
     fseek(arg, 0, SEEK_SET);
     return true;
 }
-
-
 
 /**
  * @brief Takes a pointer of FILE type and checks if characters are within UTF-range
@@ -199,7 +204,7 @@ bool is_utf(FILE *arg)
     int c;
     int expectingAmountOfBytes = 0; // Assume UTF-8 until proven otherwise
 
-    while ((c = fgetc(arg)) != EOF)
+    while ((c = protective_get_c(arg)) != EOF)
     {
         if ((c & 0x80) == 0x00)
         { // 0
@@ -224,8 +229,8 @@ bool is_utf(FILE *arg)
 
         for (int i = 0; i < expectingAmountOfBytes; i++)
         {
-            int nextByte = fgetc(arg);
-            if ((nextByte & 0xC0) != 0x80)
+            int nextByte = protective_get_c(arg);
+            if ((nextByte & 0xC0) != 0x80) // doesnt start with 10 as binary
             {
                 fseek(arg, 0, SEEK_SET);
                 return false;
