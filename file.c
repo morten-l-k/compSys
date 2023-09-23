@@ -105,7 +105,12 @@ bool is_ascii(FILE *arg)
     return true;
 }
 
-
+/**
+ * @brief Takes a pointer of FILE type and counts number of utf multibyte characters
+ *
+ * @param arg
+ * @return int
+ */
 int count_utf_multiByte_characters(FILE *arg)
 {
     int multiByteCharacters = 0;
@@ -226,13 +231,6 @@ bool is_utf(FILE *arg)
                 return false;
             }
         }
-        // if ((c > 255 && c <= 1114111) || (c > 127 && c < 160)) {
-        //     return true;
-        // } else {
-        //
-        //     b = false;
-        //     break;
-        // }
     }
     fseek(arg, 0, SEEK_SET);
     return true;
