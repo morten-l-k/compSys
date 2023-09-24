@@ -284,7 +284,7 @@ int main(int argc, char* argv[])
     {
         if (argc == 1)
         {
-            printf("Usage: file path");
+            printf("Usage: file path\n");
             retval = EXIT_FAILURE; 
         }
         else 
