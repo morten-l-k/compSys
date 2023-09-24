@@ -20,6 +20,14 @@ enum file_type
     DATA
 };
 
+
+// Provided in the assignment
+int print_error(char *path, int errnum) {
+    return fprintf(stdout, "%s: cannot determine (%s)\n",
+    path, strerror(errnum));
+}
+
+
 /**
  * @brief Function opens file on path and returns pointer to filestream
  *
@@ -267,28 +275,38 @@ const char *const FILE_TYPE_STRINGS[] = {
  * @param argv
  * @return int
  */
-int main(int argc, char *argv[])
+
+int main(int argc, char* argv[]) 
 {
+    
     int retval = EXIT_SUCCESS;
-    if (argc != 2)
+    if (argc != 2) 
     {
-        printf("One argument required only\n");
-        retval = EXIT_FAILURE;
-    }
-    else
-    {
-        if (access(argv[1], F_OK) == 0)
+        if (argc == 1)
         {
-            FILE *fp = open_file(argv[1]);
+            printf("Usage: file path");
+            retval = EXIT_FAILURE; 
+        }
+        else 
+        {
+            printf("Usage: Only one file path\n");
+            retval = EXIT_FAILURE;
+        }
+    } 
+    else 
+    {
+        FILE* fp = open_file(argv[1]);
+        if(fp != NULL) 
+        {
             enum file_type file = find_format(fp);
-            printf("%s: %s\n", argv[1], FILE_TYPE_STRINGS[file]);
+            printf("%s: %s\n",argv[1],FILE_TYPE_STRINGS[file]);
             fclose(fp);
             retval = EXIT_SUCCESS;
         }
-        else
+        else 
         {
-            printf("File does not exist");
-            retval = EXIT_FAILURE;
+            print_error(argv[1], errno);
+            retval = EXIT_SUCCESS;
         }
     }
     return retval;
