@@ -5,7 +5,7 @@
             "name": "C Debug",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/id_query_indexed", // Change this to the program you want to debug
+            "program": "${workspaceFolder}/id_query_binsort", // Change this to the program you want to debug
             "args": ["20000records.tsv"], // Change this to your desired argument
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build"

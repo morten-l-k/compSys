@@ -8,16 +8,20 @@
 
 #include "record.h"
 #include "id_query.h"
-// liste
-struct indexed_data
+
+// binary search tree
+struct treeNode
 {
-    struct index_record *irs;
-    int n;
+    int64_t osm_id;
+    struct record * value;
+    struct treeNode *left;
+    struct treeNode *right;
 };
+
 int compare_index_records(const void *a, const void *b)
 {
-    const struct index_record *record_a = (const struct index_record *)a;
-    const struct index_record *record_b = (const struct index_record *)b;
+    const struct record *record_a = (const struct record *)a;
+    const struct record *record_b = (const struct record *)b;
 
     if (record_a->osm_id < record_b->osm_id)
     {
@@ -32,59 +36,51 @@ int compare_index_records(const void *a, const void *b)
         return 0;
     }
 }
-
-struct indexed_data *mk_indexed(struct record *rs, int n)
-{
-    struct indexed_data *data = (struct indexed_data *)malloc(sizeof(struct indexed_data));
-    if (data == NULL)
-    {
-        fprintf(stderr, "Error: Failed to allocate memory for indexed_data\n");
-        exit(EXIT_FAILURE);
+struct treeNode* construct_treeNode(struct treeNode* parent, struct record *r){
+   if(parent == NULL) { // treeNode eksistere ikke
+        parent = (struct treeNode *)malloc(sizeof(struct treeNode));
+        parent->osm_id = r->osm_id;
+        parent->value = r; // & får adressen til recorden
     }
-    data->irs = (struct index_record *)malloc(n * sizeof(struct index_record));
-    if (data->irs == NULL)
-    {
-        fprintf(stderr, "Error: Failed to allocate memory for index_record\n");
-        exit(EXIT_FAILURE);
+    else if (parent->osm_id <= r->osm_id) { // go right
+        parent->right = construct_treeNode(parent->right,r);
     }
-    // opretter en indekseret datastruktur, der indeholder kopier af de oprindelige data, som er sorteret efter osm_id
-    for (int i = 0; i < n; i++)
-    {
-        data->irs[i].osm_id = rs[i].osm_id;
-        data->irs[i].record = &rs[i];
+    else { // go left
+        parent->left = construct_treeNode(parent->left,r);
     }
-
-    // Sorter indeksdatastrukturen
-    qsort(data->irs, n, sizeof(struct index_record), compare_index_records);
-    data->n = n;
-
-    return data;
+    return parent;
 }
 
-void free_indexed(struct indexed_data *data)
+struct treeNode *mk_indexed(struct record *rs, int n)
+{
+    // Sorter indeksdatastrukturen
+    // qsort(data, n, sizeof(struct record), compare_index_records);
+    struct treeNode* root = NULL;
+    for (int i = 0; i < n; i++)
+    {
+        root = construct_treeNode(root,&rs[i]);
+    }
+    
+    return root;
+}
+
+void free_indexed(struct treeNode *data)
 {
     if (data != NULL)
     {
-        free(data->irs);
+        free_indexed(data->right);
+        free_indexed(data->left);
         free(data);
     }
 }
-// binary search tree
-struct treeNode
-{
-    int64_t osm_id;
-    struct record * value;
-    struct treeNode *left;
-    struct treeNode *right;
-};
 
 const struct record *lookup_binary(struct treeNode *data, int64_t needle)
 {
     if(data == NULL)
         return NULL;
-    if(data -> value == needle)// found
+    if(data -> osm_id == needle)// found
         return data->value;
-    if(data->value > needle)//go left
+    if(data->osm_id > needle)//go left
         return lookup_binary(data->left,needle);
     else
         return lookup_binary(data->right,needle);
