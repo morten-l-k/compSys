@@ -37,15 +37,15 @@ int compare_index_records(const void *a, const void *b)
     }
 }
 struct treeNode* construct_treeNode(struct treeNode* parent, struct record *r){
-   if(parent == NULL) { // treeNode eksistere ikke
+   if(parent == NULL) { // treeNode does not exist
         parent = (struct treeNode *)malloc(sizeof(struct treeNode));
         parent->osm_id = r->osm_id;
-        parent->value = r; // & får adressen til recorden
+        parent->value = r;
     }
-    else if (parent->osm_id <= r->osm_id) { // go right
+    else if (parent->osm_id <= r->osm_id) { // Build tree structure to the right
         parent->right = construct_treeNode(parent->right,r);
     }
-    else { // go left
+    else { // Build tree structure to the left
         parent->left = construct_treeNode(parent->left,r);
     }
     return parent;
