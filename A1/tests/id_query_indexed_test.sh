@@ -1,0 +1,18 @@
+
+
+echo "2202162" | ../id_query_indexed ../data/20000records.tsv > test_output.txt
+
+if grep -q " France 1.875310 46.799535" test_output.txt; then
+  echo "Test case 1:  Passed"
+else
+  echo "Test case 1:  Failed"
+fi
+
+# Test record not found
+echo "45" | ../id_query_indexed ../data/20000records.tsv > test_output.txt
+
+if grep -q "45: not found" test_output.txt; then
+  echo "Test ease 2; Passed"
+else
+  echo "Test case 2: Failed"
+fi
