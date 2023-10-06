@@ -9,7 +9,6 @@
 #include "record.h"
 #include "id_query.h"
 
-// binary search tree
 struct treeNode
 {
     int64_t osm_id;
@@ -53,8 +52,6 @@ struct treeNode* construct_treeNode(struct treeNode* parent, struct record *r){
 
 struct treeNode *mk_indexed(struct record *rs, int n)
 {
-    // Sorter indeksdatastrukturen
-    // qsort(data, n, sizeof(struct record), compare_index_records);
     struct treeNode* root = NULL;
     for (int i = 0; i < n; i++)
     {
@@ -78,9 +75,9 @@ const struct record *lookup_binary(struct treeNode *data, int64_t needle)
 {
     if(data == NULL)
         return NULL;
-    if(data -> osm_id == needle)// found
+    if(data -> osm_id == needle)
         return data->value;
-    if(data->osm_id > needle)//go left
+    if(data->osm_id > needle)
         return lookup_binary(data->left,needle);
     else
         return lookup_binary(data->right,needle);
