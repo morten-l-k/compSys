@@ -8,20 +8,18 @@
 
 #include "record.h"
 #include "id_query.h"
+#include "id_query_naive.h"
 
-struct naive_data
-{
-  struct record *rs;
-  int n;
-};
+// struct naive_data
+// {
+//   struct record *rs;
+//   int n;
+// };
 
 struct naive_data *mk_naive(struct record *rs, int n)
 {
-  // struct naive_data data;
-  // struct naive_data *pointer = &data;
-  // data.rs = rs;
-  // data.n = n;
-  // return pointer;
+
+
   struct naive_data *data = (struct naive_data *)malloc(sizeof(struct naive_data));
   if (data == NULL)
   {
@@ -41,9 +39,8 @@ void free_naive(struct naive_data *data)
 
 const struct record *lookup_naive(struct naive_data *data, int64_t needle)
 {
-  int i = 1;
   struct record *records = data[0].rs;
-  for (size_t i = 0; i < data[0].n; i++)
+  for (int64_t i = 0; i < data[0].n; i++)
   {
     if (records[i].osm_id == needle) // check for corrupt memory..
     {
