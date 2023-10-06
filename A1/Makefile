@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-Wall -Wextra -pedantic -std=gnu99 -g
 LDFLAGS=-lm
 PROGRAMS=random_ids id_query_naive coord_query_naive
-TESTS=..
+TESTS=./tests
 
 .PHONY: all test clean ../src.zip
 
