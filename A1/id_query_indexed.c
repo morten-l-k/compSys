@@ -58,7 +58,7 @@ const struct record *lookup_indexed(struct indexed_data *data, int64_t needle)
     struct index_record *records = data[0].irs;
     for (int i = 0; i < data[0].n; i++)
     {
-        if (records[i].osm_id == needle) // check for corrupt memory..
+        if (records[i].osm_id == needle)
         {
             return records[i].record;
         }
