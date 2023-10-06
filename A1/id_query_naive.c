@@ -8,13 +8,12 @@
 
 #include "record.h"
 #include "id_query.h"
-#include "id_query_naive.h"
 
-// struct naive_data
-// {
-//   struct record *rs;
-//   int n;
-// };
+struct naive_data
+{
+  struct record *rs;
+  int n;
+};
 
 struct naive_data *mk_naive(struct record *rs, int n)
 {

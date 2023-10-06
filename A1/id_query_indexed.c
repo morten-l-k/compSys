@@ -8,36 +8,16 @@
 
 #include "record.h"
 #include "id_query.h"
-// enkel
 struct index_record
 {
     int64_t osm_id;
     const struct record *record;
 };
-// liste
 struct indexed_data
 {
     struct index_record *irs;
     int n;
 };
-int compare_index_records(const void *a, const void *b)
-{
-    const struct index_record *record_a = (const struct index_record *)a;
-    const struct index_record *record_b = (const struct index_record *)b;
-
-    if (record_a->osm_id < record_b->osm_id)
-    {
-        return -1;
-    }
-    else if (record_a->osm_id > record_b->osm_id)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-}
 
 struct indexed_data *mk_indexed(struct record *rs, int n)
 {
@@ -53,15 +33,12 @@ struct indexed_data *mk_indexed(struct record *rs, int n)
         fprintf(stderr, "Error: Failed to allocate memory for index_record\n");
         exit(EXIT_FAILURE);
     }
-    // opretter en indekseret datastruktur, der indeholder kopier af de oprindelige data, som er sorteret efter osm_id
     for (int i = 0; i < n; i++)
     {
         data->irs[i].osm_id = rs[i].osm_id;
         data->irs[i].record = &rs[i];
     }
 
-    // Sorter indeksdatastrukturen
-    // qsort(data->irs, n, sizeof(struct index_record),compare_index_records);
     data->n = n;
 
     return data;
@@ -75,12 +52,6 @@ void free_indexed(struct indexed_data *data)
         free(data);
     }
 }
-// binary search tree
-//  struct TreeNode
-//  {
-//      struct TreeNode* left;
-//      struct TreeNode* right;
-//  };
 
 const struct record *lookup_indexed(struct indexed_data *data, int64_t needle)
 {
