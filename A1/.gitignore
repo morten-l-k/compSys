@@ -1,4 +1,11 @@
 # *.tsv
+#Avoid compiled files
+id_query_naive
+id_query_indexed
+id_query_binsort
+id_query_bonus
+coord_query_naive
+random_ids
 # Prerequisites
 *.d
 
