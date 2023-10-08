@@ -10,7 +10,7 @@ fi
 echo "45" | ../id_query_binsort ../data/20000records.tsv > test_output.txt
 
 if grep -q "45: not found" test_output.txt; then
-  echo "Test ease 2; Passed"
+  echo "Test case 2; Passed"
 else
   echo "Test case 2: Failed"
 fi
@@ -19,7 +19,7 @@ fi
 echo "ef" | ../id_query_binsort ../data/20000records.tsv > test_output.txt
 
 if grep -q "0: not found" test_output.txt; then
-  echo "Test ease 2; Passed"
+  echo "Test case 3; Passed"
 else
-  echo "Test case 2: Failed"
+  echo "Test case 3: Failed"
 fi
