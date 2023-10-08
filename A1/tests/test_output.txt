@@ -1,5 +1,0 @@
-Reading records: 35ms
-Building index: 7ms
-45: not found
-Query time: 0us
-Total query runtime: 0us

@@ -44,31 +44,25 @@ void free_indexed(struct bin_data *data) {
 }
 
 struct record* binary_search(struct record *rs, int n, int64_t needle) {
-    // int left = 0;
-    // int right = n - 1;
-    // struct record *return_value = &rs[0];
-    // // printf("LEFT IS %d, right is %d\n",left,right);
-
-    // while (left <= right) {
-    //     int median = floor((left + right) / 2);
-    //     printf("MEDIAN IS %d\n",median);
-    //     if (rs[median].osm_id < needle) {
-    //         printf("MEDIAN VALUE IS SMALLER THAN NEEDLE: %lld\n ",rs[median].osm_id);
-    //         left = median + 1;
-    //     } else if (rs[median].osm_id > needle) {
-    //         printf("MEDIAN VALUE IS LARGER THAN NEEDLE: %lld\n ",rs[median].osm_id);
-    //         right = median - 1;
-    //     } else {
-    //         return return_value = &rs[median];
-    //     }
-    // }
-    // // printf("RETURN_VALUE IS %lld\n",return_value->osm_id);
-    // // printf("RETURN_NAME IS %s\n",return_value->name);
-    // return return_value;
+    int left = 0;
+    int right = n - 1;// n == 5 right = 4. 0 indexed..
+        // if (left-right == 0 ) {
+        //     return rs;
+        // }
+    while (left <= right) {
+        int median = floor((left + right) / 2);// 2
+        if (rs[median].osm_id < needle) {
+            left = median + 1;
+        } else if (rs[median].osm_id > needle) {
+            right = median - 1;
+        } else {
+            return &rs[median];
+        }
+    }
+    return NULL;
 }
 
 const struct record *lookup_binary(struct bin_data *data, int64_t needle) {
-    // printf("IN LOOKUP\n");
     struct record *hit = binary_search(data->rs,data->n,needle);
     return hit;
 }
