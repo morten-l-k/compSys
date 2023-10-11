@@ -1,0 +1,12 @@
+# Avoid compiled files
+fibs
+job_queue
+test_file
+job_queue.o
+
+#Avoid dSYM files
+*.DS_Store
+*.dSYM
+
+#Avoid .editorconfig files
+.editorconfig
