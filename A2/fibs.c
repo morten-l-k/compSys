@@ -56,6 +56,7 @@ void* worker(void *arg) {
 
   while (1) {
     char *line;
+    //Here pointer pointer of line is passed on to job_queue_pop
     if (job_queue_pop(jq, (void**)&line) == 0) {
       fib_line(line);
       free(line);
@@ -105,6 +106,7 @@ int main(int argc, char * const *argv) {
   ssize_t line_len;
   size_t buf_len = 0;
   while ((line_len = getline(&line, &buf_len, stdin)) != -1) {
+    //Here we give a char *line pointer as argument, which is pushed to queue
     job_queue_push(&jq, (void*)strdup(line));
   }
   free(line);
@@ -112,7 +114,7 @@ int main(int argc, char * const *argv) {
   // Destroy the queue.
   job_queue_destroy(&jq);
 
-  // Wait for all threads to finish.  This is important, at some may
+  // Wait for all threads to finish.  This is important, as some may
   // still be working on their job.
   for (int i = 0; i < num_threads; i++) {
     if (pthread_join(threads[i], NULL) != 0) {
