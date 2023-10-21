@@ -9,7 +9,7 @@
                 "-g",
                 "${file}",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension} test_files/ascii5.input"
+                "${fileDirname}/${fileBasenameNoExtension} ./"
             ],
             "options": {
                 "cwd": "${fileDirname}"
