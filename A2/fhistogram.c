@@ -141,7 +141,7 @@ int main(int argc, char * const *argv) {
 
   // Create job queue.
   struct job_queue queue;
-  job_queue_init(&queue, 0);
+  job_queue_init(&queue, 64);
 
 
   // Start up the worker threads.
@@ -151,9 +151,6 @@ int main(int argc, char * const *argv) {
       err(1, "pthread_create() failed");
     }
   }
-  printf("count: %i\n",queue.queue_count);
-  printf("capacity %i\n",queue.capacity);
-
   FTSENT *p;
   //Gennemgå alle filer
   while ((p = fts_read(ftsp)) != NULL) { // per fil
@@ -161,24 +158,21 @@ int main(int argc, char * const *argv) {
     case FTS_D:
       break;
     case FTS_F:
-  printf("%s\n",strdup(p->fts_path));
-
-      // job_queue_push(&queue,(void*)strdup(p->fts_path)); // lig i queue
+      job_queue_push(&queue,(void*)strdup(p->fts_path)); // lig i queue
       break;
     default:
       break;
     }
   }
-  printf("STOP");
 
-  fts_close(ftsp);
-  // Wait for all threads to finish.  This is important, as some may
-  // still be working on their job.
+  // // Wait for all threads to finish.  This is important, as some may
+  // // still be working on their job.
     for (int i = 0; i < num_threads; i++) {
         if (pthread_join(threads[i], NULL) != 0) {
             err(1, "pthread_join() failed");
         }
     }
+  fts_close(ftsp);
 
   move_lines(9);
 
