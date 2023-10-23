@@ -19,6 +19,45 @@
 
 #include "job_queue.h"
 
+struct worker_args {
+  char const *needle;
+  struct job_queue *jq;
+};
+
+void *worker(void *args) {
+  //Unpacking arguments
+  struct worker_args *worker_args = (struct worker_args*) args;
+  char const *needle = worker_args->needle;
+  struct job_queue *jq = worker_args->jq;
+  
+  char const *path = NULL;
+  //VED IKKE OM VI SKULLE TJEKKE jq.count her, da vi nok får problemer når vi forsøger at poppe når jq
+  //er tom...
+  assert(job_queue_pop(jq,(void**)&path) == 0);
+  FILE *f = fopen(path, "r");
+
+  if (f == NULL) {
+    warn("failed to open %s", path);
+    return NULL;
+  }
+
+  char *line = NULL;
+  size_t linelen = 0;
+  int lineno = 1; //Line number
+
+  while (getline(&line, &linelen, f) != -1) {
+    if (strstr(line, needle) != NULL) {
+      printf("%s:%d: %s", path, lineno, line);
+    }
+    lineno++;
+  }
+
+  free(line);
+  fclose(f);
+
+  return NULL;
+}
+
 int main(int argc, char * const *argv) {
   if (argc < 2) {
     err(1, "usage: [-n INT] STRING paths...");
@@ -26,7 +65,7 @@ int main(int argc, char * const *argv) {
   }
 
   int num_threads = 1;
-  char const *needle = argv[1];
+  char const *needle = argv[1]; //Recall: const qualifier makes variable read-only
   char * const *paths = &argv[2];
 
 
@@ -51,7 +90,22 @@ int main(int argc, char * const *argv) {
     paths = &argv[2];
   }
 
-  assert(0); // Initialise the job queue and some worker threads here.
+  // Initialising the job queue 
+  struct job_queue jq;
+  assert(job_queue_init(&jq,64) == 0);
+
+  //Initilising worker threads
+  pthread_t *threads = calloc(num_threads, sizeof(pthread_t));
+  struct worker_args worker_args;
+  worker_args.jq = &jq;
+  worker_args.needle = needle;
+
+  for (size_t i = 0; i < (size_t)num_threads; i++) {
+    if (pthread_create(&threads[i], NULL, &worker, &worker_args) != 0) {
+      err(1, "pthread_create() failed");
+    }
+  }
+  
 
   // FTS_LOGICAL = follow symbolic links
   // FTS_NOCHDIR = do not change the working directory of the process
@@ -67,12 +121,12 @@ int main(int argc, char * const *argv) {
   }
 
   FTSENT *p;
-  while ((p = fts_read(ftsp)) != NULL) {
+  while ((p = fts_read(ftsp)) != NULL) { //fts_read() reads a node in the file-tree-structure (FTS)
     switch (p->fts_info) {
-    case FTS_D:
+    case FTS_D: //Directory entry
       break;
-    case FTS_F:
-      assert(0); // Process the file p->fts_path, somehow.
+    case FTS_F: //File entry
+      assert(job_queue_push(&jq,strdup(p->fts_path)) == 0); // Process the file p->fts_path, somehow.
       break;
     default:
       break;
@@ -80,8 +134,16 @@ int main(int argc, char * const *argv) {
   }
 
   fts_close(ftsp);
+  job_queue_destroy(&jq);// Shut down the job queue and the worker threads here.
 
-  assert(0); // Shut down the job queue and the worker threads here.
+  // Wait for all threads to finish.  This is important, as some may
+  // still be working on their job.
+  for (int i = 0; i < num_threads; i++) {
+    if (pthread_join(threads[i], NULL) != 0) {
+      err(1, "pthread_join() failed");
+    }
+  }
+  free(threads);
 
   return 0;
 }
