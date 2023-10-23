@@ -4,6 +4,7 @@ job_queue
 test_file
 job_queue.o
 fauxgrep
+fauxgrep-mt
 
 #Avoid dSYM files
 *.DS_Store
