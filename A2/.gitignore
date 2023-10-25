@@ -8,9 +8,6 @@ fauxgrep-mt
 fhistogram
 fhistogram-mt
 
-#Avoid test folders
-/test
-
 #Avoid dSYM files
 *.DS_Store
 *.dSYM

@@ -31,29 +31,33 @@ void *worker(void *args) {
   struct job_queue *jq = worker_args->jq;
   
   char const *path = NULL;
-  //VED IKKE OM VI SKULLE TJEKKE jq.count her, da vi nok får problemer når vi forsøger at poppe når jq
-  //er tom...
-  assert(job_queue_pop(jq,(void**)&path) == 0);
-  FILE *f = fopen(path, "r");
+    while (1) {
+      if (job_queue_pop(jq,(void**)&path) == 0) {
+      
+        FILE *f = fopen(path, "r");
 
-  if (f == NULL) {
-    warn("failed to open %s", path);
-    return NULL;
+      if (f == NULL) {
+        warn("failed to open %s", path);
+        return NULL;
+      }
+
+      char *line = NULL;
+      size_t linelen = 0;
+      int lineno = 1; //Line number
+  
+      while (getline(&line, &linelen, f) != -1) {
+        if (strstr(line, needle) != NULL) {
+          printf("%s:%d: %s", path, lineno, line);
+        }
+        lineno++;
+      }
+
+      free(line);
+      fclose(f);
+      } else {
+        break;
+      }
   }
-
-  char *line = NULL;
-  size_t linelen = 0;
-  int lineno = 1; //Line number
-
-  while (getline(&line, &linelen, f) != -1) {
-    if (strstr(line, needle) != NULL) {
-      printf("%s:%d: %s", path, lineno, line);
-    }
-    lineno++;
-  }
-
-  free(line);
-  fclose(f);
 
   return NULL;
 }

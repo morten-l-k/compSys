@@ -37,17 +37,14 @@ int job_queue_destroy(struct job_queue *job_queue) {
   // Wait for queue to be emptied and to rest of consumers to die
   while ((job_queue->queue_count > 0) || (job_queue->cons_amount > 0)) {
     // Wait for consumer pre-destruction to exit with -1
-    printf("Here, 38. Count: %d, cons amount: %d \n", job_queue->queue_count, job_queue->cons_amount);
     assert(pthread_cond_wait(&job_queue->cond_destroy, &job_queue->queue_access) == 0);
     assert(pthread_cond_signal(&job_queue->cons_cond) == 0);
   }
-  printf("Count %d, Cons: %d \n", job_queue->queue_count, job_queue->cons_amount);
   // Destroy mutex and variable condition
   while(job_queue->cons_amount > 0){
     assert(pthread_cond_wait(&job_queue->cond_destroy, &job_queue->queue_access) == 0);
     assert(pthread_cond_broadcast(&job_queue->cons_cond)==0);
   }
-  printf("Here, 43\n");
   job_queue->queue_is_destroyed = 1; 
   assert(pthread_mutex_unlock(&job_queue->queue_access) == 0);
   assert(pthread_mutex_destroy(&job_queue->queue_access) == 0);
@@ -71,7 +68,6 @@ int job_queue_push(struct job_queue *job_queue, void *data) {
   while (job_queue->capacity <= job_queue->queue_count) {
     assert(pthread_cond_wait(&job_queue->prod_cond, &job_queue->queue_access) == 0);
   }
-  printf("56\n");
   //#1 step: Push data to queue and update queue count
   job_queue->data[job_queue->prod_pointer] = data; 
   job_queue->queue_count++;
@@ -96,9 +92,7 @@ int job_queue_pop(struct job_queue *job_queue, void **data) {
     return -1;
   }
   else {
-    printf("Here, 86, cons: %d \n", job_queue->cons_amount);
     if (job_queue->cons_amount == 0 && job_queue->queue_destroyed == 1 && job_queue->queue_count == 0) {
-      printf("101\n");
       pthread_cond_signal(&job_queue->cond_destroy);
       return -1;
     }
@@ -120,7 +114,6 @@ int job_queue_pop(struct job_queue *job_queue, void **data) {
       }
       // Last consumer well go here (now the queue can be destroyed)
       else {
-        printf("Here, 105, cosnumers: %d \n", job_queue->cons_amount);
         job_queue->cons_amount--;
         assert(pthread_cond_signal(&job_queue->cond_destroy) == 0);
         assert(pthread_mutex_unlock(&job_queue->queue_access) == 0);
