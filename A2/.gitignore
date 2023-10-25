@@ -5,6 +5,11 @@ test_file
 job_queue.o
 fauxgrep
 fauxgrep-mt
+fhistogram
+fhistogram-mt
+
+#Avoid test folders
+/test
 
 #Avoid dSYM files
 *.DS_Store
