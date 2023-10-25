@@ -156,8 +156,8 @@ int main(int argc, char * const *argv) {
 
   fts_close(ftsp);
 
-  assert(0); // Shut down the job queue and the worker threads here.
-
+  pthread_mutex_destroy(&global_histogram_mutex);
+  job_queue_destroy(&queue);
   move_lines(9);
 
   return 0;
