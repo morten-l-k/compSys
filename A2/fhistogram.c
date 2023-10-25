@@ -19,7 +19,6 @@
 #include "histogram.h"
 #include "job_queue.h"
 
-
 int global_histogram[8] = { 0 };
 // Opretter en mutex (lås) og initialiserer den. Dette forhindrer konkurrerende
 // tråde i at samtidig opdatere histogrammet, hvilket sikrer trådsikkerhed.
@@ -64,7 +63,7 @@ void *worker(void *arg) {
   char *path;
   while (1) {
     // Hent en opgave (Job) fra jobkøen. Hvis der ikke er flere opgaver, afslut tråden.
-      job_queue_pop(queue,(void**)&path); // skal have to inputs: job queue og data
+      job_queue_pop(queue,(void**)&path);
       if (path == NULL) {
           break;
       }
@@ -73,42 +72,6 @@ void *worker(void *arg) {
   free(path);
   return NULL;
 }
-
-    //     // Åbn filen for læsning.
-    //     FILE *f = fopen(path, "r");
-
-    //     if (f == NULL) {
-    //         // Hvis filen ikke kunne åbnes, udskriv en fejlmeddelelse.
-    //         fflush(stdout);
-    //         warn("failed to open %s", path);
-    //     } else {
-    //       // Hvis filen bkan åbnes, opret en histogramvariabel.
-    //         int local_histogram[8] = { 0 };
-    //         int i = 0;
-    //         char c;
-    //         // Læs filen byte for byte og opdater histogramvariabel og den globale histogram.
-    //         while (fread(&c, sizeof(c), 1, f) == 1) {
-    //             i++;
-    //             update_histogram(local_histogram, c);
-    //              // Udskriv det globale histogram, mens du beskytter det med mutex.
-    //             if ((i % 100000) == 0) {// går tallet op i 100.000
-    //                 pthread_mutex_lock(&global_histogram_mutex);
-    //                 merge_histogram(local_histogram, global_histogram);
-    //                 print_histogram(global_histogram);
-    //                 pthread_mutex_unlock(&global_histogram_mutex);
-    //             }
-    //         }
-    //          // Luk filen efter færdig behandling og opdater det globale histogram igen.
-    //         fclose(f);
-    //         pthread_mutex_lock(&global_histogram_mutex);
-    //         merge_histogram(local_histogram, global_histogram);
-    //         print_histogram(global_histogram);
-    //         pthread_mutex_unlock(&global_histogram_mutex);
-    //     }
-    //     free(path);
-    // }
-    // return NULL;
-// }
 
 int main(int argc, char * const *argv) {
   if (argc < 2) {
