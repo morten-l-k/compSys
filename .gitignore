@@ -1,6 +1,12 @@
+#Ignore test folder
 A0/file test_files
+A1/tests/test_output.txt
+A1/tests/test_output.txt
 A0/file
+
+#Ignore .vscode specific files
 .vscode/launch.json
 .vscode/tasks.json
-A1/tests/test_output.txt
-A1/tests/test_output.txt
+
+#Ignore .DS_Store files
+*.DS_Store
