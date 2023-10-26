@@ -3,7 +3,8 @@
 #include "common.h"
 #include "sha256.h"
 
-// container for hasher
+// container for hasher - array of size SHA256_HASH_SIZE (i.e. 32). Array contains elements of
+//type uint8_t
 typedef uint8_t hashdata_t[SHA256_HASH_SIZE];
 
 // container for assembling password with salt
