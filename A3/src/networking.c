@@ -76,20 +76,34 @@ void get_file_sha(const char* sourcefile, hashdata_t hash, int size)
  * as handed out, this function is never called. You will need to decide where 
  * it is sensible to do so.
  */
-void get_signature(char* password, char* salt, hashdata_t* hash)
-{
-    // Your code here. This function has been added as a guide, but feel free 
-    // to add more, or work in other parts of the code
+void get_signature(char* password, char* salt, hashdata_t* hash) {
+    //Salting password
+    char salted_password[PASSWORD_LEN+SALT_LEN+1];
+    salted_password[0] = '\0';
+    strcat(salted_password,password);
+    strcat(salted_password,salt);
+
+    //Hashing salted_password
+    printf("HASH BEFORE: %ld\n",hash);
+    get_data_sha(&salted_password,*hash,SHA256_HASH_WORDS,SHA256_HASH_SIZE);
+    printf("HASH AFTER: %ld\n",hash);
 }
 
 /*
  * Register a new user with a server by sending the username and signature to 
  * the server
  */
-void register_user(char* username, char* password, char* salt)
+void register_user(char* username, char* password, char* user_salt)
 {
     // Your code here. This function has been added as a guide, but feel free 
     // to add more, or work in other parts of the code
+    //OWN COMMENTS: DET GIVER MULIGVIS MENING AT GET_SIGNATURE KALDES HERFRA, OG DET HASHEDE DATA
+    //SKAL JO SÅ SENDES TIL SERVEREN
+
+    //Getting signature by salting and hashing password
+    hashdata_t hash; //Signature will be stored in hash
+    get_signature(password,user_salt,&hash);
+
 }
 
 /*
@@ -179,16 +193,21 @@ int main(int argc, char **argv)
     // Note that a random salt should be used, but you may find it easier to
     // repeatedly test the same user credentials by using the hard coded value
     // below instead, and commenting out this randomly generating section.
-    for (int i=0; i<SALT_LEN; i++)
-    {
-        user_salt[i] = 'a' + (random() % 26);
-    }
+    // for (int i=0; i<SALT_LEN; i++)
+    // {
+    //     user_salt[i] = 'a' + (random() % 26);
+    // }
     user_salt[SALT_LEN] = '\0';
-    //strncpy(user_salt, 
-    //    "0123456789012345678901234567890123456789012345678901234567890123\0", 
-    //    SALT_LEN+1);
+    strncpy(user_salt, 
+       "0123456789012345678901234567890123456789012345678901234567890123\0", 
+       SALT_LEN+1);
 
     fprintf(stdout, "Using salt: %s\n", user_salt);
+
+    //Creating socket and also making client request connection to server with compsy_helper
+    int clientfd = compsys_helper_open_clientfd(server_ip,server_port);
+    assert(clientfd != -2 || clientfd != -1); //Error if -2 or -1
+
 
     // The following function calls have been added as a structure to a 
     // potential solution demonstrating the core functionality. Feel free to 
@@ -199,7 +218,7 @@ int main(int argc, char **argv)
     // Register the given user. As handed out, this line will run every time 
     // this client starts, and so should be removed if user interaction is 
     // added
-    register_user(username, password, user_salt);
+    register_user(&username, &password, &user_salt);
 
     // Retrieve the smaller file, that doesn't not require support for blocks. 
     // As handed out, this line will run every time this client starts, and so 
