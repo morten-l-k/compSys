@@ -9,13 +9,12 @@ struct job_queue {
   int prod_pointer;
   int cons_pointer; 
   int queue_count;
+  int queue_to_be_destroyed; 
+  int cons_amount;
   pthread_mutex_t queue_access; 
   pthread_cond_t cons_cond;
   pthread_cond_t prod_cond;
   pthread_cond_t cond_destroy;
-  int queue_destroyed; 
-  int cons_amount;
-  int queue_is_destroyed;
 };
 
 // Initialise a job queue with the given capacity.  The queue starts out
