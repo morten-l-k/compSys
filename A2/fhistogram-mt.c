@@ -26,7 +26,6 @@ int global_histogram[8] = { 0 };
 // tråde i at samtidig opdatere histogrammet, hvilket sikrer trådsikkerhed.
 pthread_mutex_t global_histogram_mutex;
 
-
 int fhistogram(char const *path) {
   FILE *f = fopen(path, "r");
 
@@ -65,8 +64,7 @@ void *worker(void *arg) {
   char *path;
   while (1) {
     // Hent en opgave (Job) fra jobkøen. Hvis der ikke er flere opgaver, afslut tråden.
-      job_queue_pop(queue,(void**)&path);
-      if (path == NULL) {
+      if (job_queue_pop(queue,(void**)&path) != 0) {
           break;
       }
       fhistogram(path);
@@ -75,14 +73,13 @@ void *worker(void *arg) {
   return NULL;
 }
 
-
 int main(int argc, char * const *argv) {
   if (argc < 2) {
     err(1, "usage: paths...");
     exit(1);
   }
 
-  int num_threads = 1;
+  int num_threads = 2;
   char * const *paths = &argv[1];
 
   if (argc > 3 && strcmp(argv[1], "-n") == 0) {
@@ -146,19 +143,18 @@ int main(int argc, char * const *argv) {
       break;
     }
   }
+  fts_close(ftsp);
+  job_queue_destroy(&queue);
+
   // // Wait for all threads to finish.  This is important, as some may
   // // still be working on their job.
-    for (int i = 0; i < num_threads; i++) {
-        if (pthread_join(threads[i], NULL) != 0) {
-            err(1, "pthread_join() failed");
+  for (int i = 0; i < num_threads; i++) {
+      if (pthread_join(threads[i], NULL) != 0) {
+          err(1, "pthread_join() failed");
         }
-    }
-
-  fts_close(ftsp);
-
+  }
+  free(threads);
   pthread_mutex_destroy(&global_histogram_mutex);
-  job_queue_destroy(&queue);
   move_lines(9);
-
   return 0;
 }
