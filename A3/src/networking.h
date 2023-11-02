@@ -4,7 +4,7 @@
 #include "sha256.h"
 
 // container for hasher - array of size SHA256_HASH_SIZE (i.e. 32). Array contains elements of
-//type uint8_t
+//type uint8_t. typedef statement syntax: typedef old-type-name new-type-name
 typedef uint8_t hashdata_t[SHA256_HASH_SIZE];
 
 // container for assembling password with salt

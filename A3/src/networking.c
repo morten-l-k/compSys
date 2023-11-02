@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <errno.h>
 
 #ifdef __APPLE__
 #include "./endian.h"
@@ -30,6 +31,10 @@ int c;
 void get_data_sha(const char* sourcedata, hashdata_t hash, uint32_t data_size, 
     int hash_size)
 {
+ printf("HASH BEFORE IN GET_DATA_SHA\n");
+    for (int i = 0; i < SHA256_HASH_SIZE; i += 8) {
+        printf("hash[%d] = %hhu\n", i, hash[i]);
+    }
   SHA256_CTX shactx;
   unsigned char shabuffer[hash_size];
   sha256_init(&shactx);
@@ -40,6 +45,10 @@ void get_data_sha(const char* sourcedata, hashdata_t hash, uint32_t data_size,
   {
     hash[i] = shabuffer[i];
   }
+   printf("HASH AFTER IN GET_DATA_SHA\n");
+    for (int i = 0; i < SHA256_HASH_SIZE; i += 8) {
+        printf("hash[%d] = %hhu\n", i, hash[i]);
+    }
 }
 
 /*
@@ -78,32 +87,60 @@ void get_file_sha(const char* sourcefile, hashdata_t hash, int size)
  */
 void get_signature(char* password, char* salt, hashdata_t* hash) {
     //Salting password
-    char salted_password[PASSWORD_LEN+SALT_LEN+1];
-    salted_password[0] = '\0';
-    strcat(salted_password,password);
-    strcat(salted_password,salt);
+    char salted_password[strlen(password) + strlen(salt)];
+    memcpy(salted_password,password,strlen(password));
+    memcpy(salted_password + strlen(password),salt,strlen(salt));
+    salted_password[strlen(password) + strlen(salt)] = '\0';
 
+    
+    printf("HASH BEFORE\n");
+    for (int i = 0; i < SHA256_HASH_SIZE; i += 8) {
+        printf("hash[%d] = %hhu\n", i, *(hash[i]));
+    }
+
+    printf("...HASHING...\n");
     //Hashing salted_password
-    printf("HASH BEFORE: %ld\n",hash);
-    get_data_sha(&salted_password,*hash,SHA256_HASH_WORDS,SHA256_HASH_SIZE);
-    printf("HASH AFTER: %ld\n",hash);
+    get_data_sha(&salted_password,*hash,strlen(salted_password),SHA256_HASH_SIZE);
+    
+    printf("HASH AFTER\n");
+    for (int i = 0; i < SHA256_HASH_SIZE; i+= 8) {
+        printf("hash[%d] = %hhu\n", i, *(hash[i]));
+    }
 }
 
 /*
  * Register a new user with a server by sending the username and signature to 
  * the server
  */
-void register_user(char* username, char* password, char* user_salt)
-{
-    // Your code here. This function has been added as a guide, but feel free 
-    // to add more, or work in other parts of the code
-    //OWN COMMENTS: DET GIVER MULIGVIS MENING AT GET_SIGNATURE KALDES HERFRA, OG DET HASHEDE DATA
-    //SKAL JO SÅ SENDES TIL SERVEREN
-
+void register_user(char* username, char* password, char* user_salt, int clientfd) {
     //Getting signature by salting and hashing password
     hashdata_t hash; //Signature will be stored in hash
+     printf("HASH BEFORE get_signature\n");
+    for (int i = 0; i < SHA256_HASH_SIZE; i += 8) {
+        printf("hash[%d] = %hhu\n", i, hash[i]);
+    }
     get_signature(password,user_salt,&hash);
+    printf("HASH AFTER get_signature\n");
+    for (int i = 0; i < SHA256_HASH_SIZE; i += 8) {
+        printf("hash[%d] = %hhu\n", i, hash[i]);
+    }
 
+    //Copying data to struct RequestHeader_t
+    RequestHeader_t request_header;
+    
+    //Setting username
+    memcpy(&(request_header.username),username,strlen(username));
+    request_header.username[strlen(username)] = '\0';
+
+    //Setting salted_and_hashed password
+    memcpy(&(request_header.salted_and_hashed), hash, SHA256_HASH_SIZE);
+    
+    //setting request_header.length
+    request_header.length = \
+        sizeof(request_header.username) + sizeof(request_header.salted_and_hashed);
+
+    //Sending request_header to server
+    assert(compsys_helper_writen(clientfd,&request_header,sizeof(request_header)) == sizeof(request_header));
 }
 
 /*
@@ -218,7 +255,7 @@ int main(int argc, char **argv)
     // Register the given user. As handed out, this line will run every time 
     // this client starts, and so should be removed if user interaction is 
     // added
-    register_user(&username, &password, &user_salt);
+    register_user(&username, &password, &user_salt, clientfd);
 
     // Retrieve the smaller file, that doesn't not require support for blocks. 
     // As handed out, this line will run every time this client starts, and so 
