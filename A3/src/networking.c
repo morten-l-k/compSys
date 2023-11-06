@@ -5,6 +5,9 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <time.h>
 
 #ifdef __APPLE__
 #include "./endian.h"
@@ -153,11 +156,69 @@ void get_file(char* username, char* password, char* salt, char* to_get)
     // Your code here. This function has been added as a guide, but feel free 
     // to add more, or work in other parts of the code
 }
+void generate_salt(char salt[], int size) {
+    for (int i=0; i<SALT_LEN; i++)
+    {
+        salt[i] = 'a' + (random() % 26);
+    }}
+
+
+
+void save_to_disc(char* username, char* salt) {
+    // Create folder
+    const char* folderName = "user_salts/";
+    if (folderName != 0) {
+        if (mkdir(folderName, 0777) != 0 && errno != EEXIST) {
+        perror("Error creating folder");
+        return;
+        }
+    }
+    //Hvis folder eksistere, lig filerne ind
+    char file_path[256];
+    strcpy(file_path, folderName);
+    strcat(file_path, username);
+    strcat(file_path, ".salt");
+    FILE *fptr;
+    // create file with username as filename
+
+    fptr = fopen(file_path, "w");
+    if (fptr == NULL) {
+        perror("Error creating file");
+        return;
+    }
+    fprintf(fptr, "%s\n", salt);
+    fclose(fptr);
+}
+void find_file(char* username, char* salt, int buff_size) {
+    // DIR* dir = opendir(directory);
+    // if (dir == NULL) {
+    //     perror("Kunne ikke åbne mappen");
+    //     return NULL;
+    // }
+
+
+    char file_path[256];
+    strcpy(file_path, "user_salts/");
+    strcat(file_path, username);
+    strcat(file_path, ".salt");
+
+    FILE *file = fopen(file_path, "r");
+    if(file == NULL) {
+        return;
+    }
+
+    fgets(salt, buff_size, file);
+    // free(file_path);
+    // free(file);
+    fclose(file);
+}
+//finde en fil baseret på username
+        //eksistere fil med bestemt username allerede
+
+
 
 int main(int argc, char **argv)
 {
-    // Users should call this script with a single argument describing what 
-    // config to use
     if (argc != 2)
     {
         fprintf(stderr, "Usage: %s <config file>\n", argv[0]);
@@ -226,18 +287,25 @@ int main(int argc, char **argv)
     {
         password[i] = '\0';
     }
+    
+    find_file(username, user_salt, SALT_LEN);
+    if (user_salt[0] == '\0') {//user doesnt exist, create salt and save the user salt file, false means the user salt already exists on disc.
+        generate_salt(user_salt, SALT_LEN);
+        save_to_disc(username,user_salt);
+    }
+    // Users should call this script with a single argument describing what 
+    // config to use
+    if (argc != 2)
+    {
+        fprintf(stderr, "Usage: %s <config file>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    } 
+
 
     // Note that a random salt should be used, but you may find it easier to
     // repeatedly test the same user credentials by using the hard coded value
     // below instead, and commenting out this randomly generating section.
-    // for (int i=0; i<SALT_LEN; i++)
-    // {
-    //     user_salt[i] = 'a' + (random() % 26);
-    // }
-    user_salt[SALT_LEN] = '\0';
-    strncpy(user_salt, 
-       "0123456789012345678901234567890123456789012345678901234567890123\0", 
-       SALT_LEN+1);
+
 
     fprintf(stdout, "Using salt: %s\n", user_salt);
 
