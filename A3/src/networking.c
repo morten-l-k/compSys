@@ -159,8 +159,9 @@ void get_file(char* username, char* password, char* salt, char* to_get)
 void generate_salt(char salt[], int size) {
     for (int i=0; i<SALT_LEN; i++)
     {
-        salt[i] = 'a' + (random() % 26);
-    }}
+        salt[i] = 'a' + (arc4random()% 26);
+    }
+}
 
 
 
