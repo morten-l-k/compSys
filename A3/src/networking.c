@@ -23,6 +23,16 @@ char server_port[PORT_LEN];
 char my_ip[IP_LEN];
 char my_port[PORT_LEN];
 
+//Define different response_header sections:
+#define resp_len        4
+#define resp_statCo     4
+#define resp_blockNr    4
+#define resp_blockCnt   4
+#define resp_blockHsh   SHA256_HASH_SIZE
+#define resp_totHsh     SHA256_HASH_SIZE
+
+
+
 int c;
 
 /*
@@ -34,10 +44,6 @@ int c;
 void get_data_sha(const char* sourcedata, hashdata_t hash, uint32_t data_size, 
     int hash_size)
 {
- printf("HASH BEFORE IN GET_DATA_SHA\n");
-    for (int i = 0; i < SHA256_HASH_SIZE; i += 8) {
-        printf("hash[%d] = %hhu\n", i, hash[i]);
-    }
   SHA256_CTX shactx;
   unsigned char shabuffer[hash_size];
   sha256_init(&shactx);
@@ -48,10 +54,6 @@ void get_data_sha(const char* sourcedata, hashdata_t hash, uint32_t data_size,
   {
     hash[i] = shabuffer[i];
   }
-   printf("HASH AFTER IN GET_DATA_SHA\n");
-    for (int i = 0; i < SHA256_HASH_SIZE; i += 8) {
-        printf("hash[%d] = %hhu\n", i, hash[i]);
-    }
 }
 
 /*
@@ -95,55 +97,91 @@ void get_signature(char* password, char* salt, hashdata_t* hash) {
     memcpy(salted_password + strlen(password),salt,strlen(salt));
     salted_password[strlen(password) + strlen(salt)] = '\0';
 
-    
-    printf("HASH BEFORE\n");
-    for (int i = 0; i < SHA256_HASH_SIZE; i += 8) {
-        printf("hash[%d] = %hhu\n", i, *(hash[i]));
-    }
-
-    printf("...HASHING...\n");
     //Hashing salted_password
-    get_data_sha(&salted_password,*hash,strlen(salted_password),SHA256_HASH_SIZE);
-    
-    printf("HASH AFTER\n");
-    for (int i = 0; i < SHA256_HASH_SIZE; i+= 8) {
-        printf("hash[%d] = %hhu\n", i, *(hash[i]));
-    }
+    get_data_sha(salted_password,*hash,strlen(salted_password),SHA256_HASH_SIZE);
 }
 
 /*
  * Register a new user with a server by sending the username and signature to 
  * the server
  */
-void register_user(char* username, char* password, char* user_salt, int clientfd) {
+void register_user(char* username, char* password, char* user_salt) {
+    //Creating socket and also making client request connection to server with compsy_helper
+    int clientfd = compsys_helper_open_clientfd(server_ip,server_port);
+    if (clientfd < 0) {
+        fprintf(stderr, "Failed to connect to the server.\n");
+        return;
+    }
+
     //Getting signature by salting and hashing password
     hashdata_t hash; //Signature will be stored in hash
-     printf("HASH BEFORE get_signature\n");
-    for (int i = 0; i < SHA256_HASH_SIZE; i += 8) {
-        printf("hash[%d] = %hhu\n", i, hash[i]);
-    }
     get_signature(password,user_salt,&hash);
-    printf("HASH AFTER get_signature\n");
-    for (int i = 0; i < SHA256_HASH_SIZE; i += 8) {
-        printf("hash[%d] = %hhu\n", i, hash[i]);
-    }
-
-    //Copying data to struct RequestHeader_t
-    RequestHeader_t request_header;
     
+    //Copying data to struct RequestHeader_t
+    RequestHeader_t request_header;    
     //Setting username
-    memcpy(&(request_header.username),username,strlen(username));
-    request_header.username[strlen(username)] = '\0';
-
+    memcpy(&(request_header.username),username, USERNAME_LEN);
+   
     //Setting salted_and_hashed password
     memcpy(&(request_header.salted_and_hashed), hash, SHA256_HASH_SIZE);
+    //setting request_header.length to 0, complying with protocol in terms of registration of new user
+    request_header.length = 0;
     
-    //setting request_header.length
-    request_header.length = \
-        sizeof(request_header.username) + sizeof(request_header.salted_and_hashed);
 
-    //Sending request_header to server
-    assert(compsys_helper_writen(clientfd,&request_header,sizeof(request_header)) == sizeof(request_header));
+    //Sending request_header to server 
+    compsys_helper_writen(clientfd, &request_header, sizeof(request_header));
+    
+    //Declaring response buffer
+    char resbuf[MAXBUF];
+    
+    //Reading response from server 
+    compsys_helper_readn(clientfd, resbuf, sizeof(resbuf));
+    
+    // Declaring variables for each datasection as per protocol:
+    char length[resp_len];
+    char statusCode[resp_statCo];
+    char blockNr[resp_blockNr];
+    char blockCnt[resp_blockCnt];
+    char blockHsh[resp_blockHsh];
+    char totalHsh[resp_totHsh];
+    
+
+    // Initializing the variables above
+    memcpy(length, resbuf, resp_len);
+    memcpy(statusCode, resbuf + resp_len, resp_statCo);
+    memcpy(blockNr, resbuf + resp_len + resp_statCo, resp_blockNr);
+    memcpy(blockCnt, resbuf + resp_len + resp_statCo + resp_blockNr, resp_blockCnt);
+    memcpy(blockHsh, resbuf + resp_len + resp_statCo + resp_blockNr + resp_blockCnt, resp_blockHsh);
+    memcpy(totalHsh, resbuf + resp_len + resp_statCo + resp_blockNr + resp_blockCnt + resp_blockHsh, resp_totHsh);
+    
+
+    // The response itself
+    uint32_t len;
+    memcpy(&len, length, sizeof(uint32_t));
+    len = OSSwapBigToHostConstInt32(len);
+    char response[len];
+    memcpy(response, resbuf + resp_len + resp_statCo + resp_blockNr + resp_blockCnt + resp_blockHsh + resp_totHsh, len);
+    response[len] = '\0';
+
+    // Ensuring with checksum that the response message has not been tampered with
+    hashdata_t thisHash;
+    get_data_sha(response, thisHash, len, SHA256_HASH_SIZE);    
+    assert(memcmp(thisHash, totalHsh, SHA256_HASH_SIZE) == 0);
+
+
+    //Checking the status code:
+    // First converte:
+    uint32_t status;
+    memcpy(&status, statusCode, sizeof(uint32_t));
+    status = OSSwapBigToHostInt32(status);
+    // Then check:
+    if(status == 1){
+        printf("Got response: %s \n", response);
+    }
+    else {
+        printf("Got unexpected status code: %d \n", status);
+    }
+    close(clientfd);
 }
 
 /*
@@ -155,6 +193,14 @@ void get_file(char* username, char* password, char* salt, char* to_get)
 {
     // Your code here. This function has been added as a guide, but feel free 
     // to add more, or work in other parts of the code
+
+    //
+
+    // Wrapping the information into proper header
+
+
+
+    
 }
 void generate_salt(char salt[], int size) {
     for (int i=0; i<SALT_LEN; i++)
@@ -187,6 +233,7 @@ void save_to_disc(char* username, char* salt) {
         perror("Error creating file");
         return;
     }
+    printf("SALT: %s \n",salt);
     fprintf(fptr, "%s\n", salt);
     fclose(fptr);
 }
@@ -274,11 +321,14 @@ int main(int argc, char **argv)
     fprintf(stdout, "Enter a username to proceed: ");
     scanf("%16s", username);
     while ((c = getchar()) != '\n' && c != EOF);
+    printf("Username before: %lu \n", sizeof(username));
     // Clean up username string as otherwise some extra chars can sneak in.
     for (int i=strlen(username); i<USERNAME_LEN; i++)
     {
         username[i] = '\0';
     }
+
+    printf("Username after: %lu \n", sizeof(username));
  
     fprintf(stdout, "Enter your password to proceed: ");
     scanf("%16s", password);
@@ -310,10 +360,6 @@ int main(int argc, char **argv)
 
     fprintf(stdout, "Using salt: %s\n", user_salt);
 
-    //Creating socket and also making client request connection to server with compsy_helper
-    int clientfd = compsys_helper_open_clientfd(server_ip,server_port);
-    assert(clientfd != -2 || clientfd != -1); //Error if -2 or -1
-
 
     // The following function calls have been added as a structure to a 
     // potential solution demonstrating the core functionality. Feel free to 
@@ -324,12 +370,14 @@ int main(int argc, char **argv)
     // Register the given user. As handed out, this line will run every time 
     // this client starts, and so should be removed if user interaction is 
     // added
-    register_user(&username, &password, &user_salt, clientfd);
+    register_user(&username, &password, &user_salt);
 
     // Retrieve the smaller file, that doesn't not require support for blocks. 
     // As handed out, this line will run every time this client starts, and so 
     // should be removed if user interaction is added
     get_file(username, password, user_salt, "tiny.txt");
+    printf("get_file_small\n");
+
 
     // Retrieve the larger file, that requires support for blocked messages. As
     // handed out, this line will run every time this client starts, and so 
