@@ -219,8 +219,6 @@ void get_file(char* username, char* password, char* salt, char* to_get)
     request.header = request_header;
     memcpy(&(request.payload), to_get, PATH_LEN);
 
-    //printf("\n\n%s\n\n",request.payload);
-
     //Sending request_header to server 
     compsys_helper_writen(clientfd, &request, sizeof(request));
 
@@ -255,7 +253,6 @@ void get_file(char* username, char* password, char* salt, char* to_get)
     char response[len];
     memcpy(response, resbuf + resp_len + resp_statCo + resp_blockNr + resp_blockCnt + resp_blockHsh + resp_totHsh, len);
     response[len] = '\0';
-    printf("%s \n", response);
 }
 
 void generate_salt(char salt[], int size) {
