@@ -191,11 +191,7 @@ void register_user(char* username, char* password, char* user_salt) {
  */
 void get_file(char* username, char* password, char* salt, char* to_get)
 {
-    // Your code here. This function has been added as a guide, but feel free 
-    // to add more, or work in other parts of the code
-
-    //
-
+    
     // Wrapping the information into proper header
 
 
