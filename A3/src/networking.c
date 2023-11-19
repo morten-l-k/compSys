@@ -192,6 +192,7 @@ void register_user(char* username, char* password, char* user_salt) {
  */
 void get_file(char* username, char* password, char* salt, char* to_get)
 {
+
     int clientfd = compsys_helper_open_clientfd(server_ip,server_port);
     if (clientfd < 0) {
         fprintf(stderr, "Failed to connect to the server.\n");
