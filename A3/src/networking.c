@@ -425,8 +425,9 @@ int main(int argc, char **argv)
     // Retrieve the smaller file, that doesn't not require support for blocks. 
     // As handed out, this line will run every time this client starts, and so 
     // should be removed if user interaction is added
-    get_file(username, password, user_salt, "tiny.txt");
-    printf("get_file_small\n");
+
+    // get_file(username, password, user_salt, "tiny.txt");
+    // printf("get_file_small\n");
 
 
     // Retrieve the larger file, that requires support for blocked messages. As
