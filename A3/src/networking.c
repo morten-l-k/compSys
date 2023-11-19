@@ -17,6 +17,7 @@
 
 #include "./networking.h"
 #include "./sha256.h"
+#include "networking.h"
 
 char server_ip[IP_LEN];
 char server_port[PORT_LEN];
@@ -191,13 +192,68 @@ void register_user(char* username, char* password, char* user_salt) {
  */
 void get_file(char* username, char* password, char* salt, char* to_get)
 {
+
+    int clientfd = compsys_helper_open_clientfd(server_ip,server_port);
+    if (clientfd < 0) {
+        fprintf(stderr, "Failed to connect to the server.\n");
+        return;
+    }
+
+    //Getting signature by salting and hashing password
+    hashdata_t hash; //Signature will be stored in hash
+    get_signature(password,&salt,&hash);
     
-    // Wrapping the information into proper header
+    //Copying data to struct RequestHeader_t
+    RequestHeader_t request_header;    
+    //Setting username
+    memcpy(&(request_header.username),username, USERNAME_LEN);
+   
+    //Setting salted_and_hashed password
+    memcpy(&(request_header.salted_and_hashed), hash, SHA256_HASH_SIZE);
 
+    request_header.length = strlen(to_get);
+    Request_t request;
+    request.header = request_header;
+    memcpy(&(request.payload), to_get, PATH_LEN);
 
+    printf("\n\n%s\n\n",request.payload);
+    //Sending request_header to server 
+    compsys_helper_writen(clientfd, &request, sizeof(request));
 
+    //Declaring response buffer
+    char resbuf[MAXBUF];
     
+    //Reading response from server 
+    compsys_helper_readn(clientfd, resbuf, sizeof(resbuf));
+    
+    // Declaring variables for each datasection as per protocol:
+    char length[resp_len];
+    char statusCode[resp_statCo];
+    char blockNr[resp_blockNr];
+    char blockCnt[resp_blockCnt];
+    char blockHsh[resp_blockHsh];
+    char totalHsh[resp_totHsh];
+    
+
+    // Initializing the variables above
+    memcpy(length, resbuf, resp_len);
+    memcpy(statusCode, resbuf + resp_len, resp_statCo);
+    memcpy(blockNr, resbuf + resp_len + resp_statCo, resp_blockNr);
+    memcpy(blockCnt, resbuf + resp_len + resp_statCo + resp_blockNr, resp_blockCnt);
+    memcpy(blockHsh, resbuf + resp_len + resp_statCo + resp_blockNr + resp_blockCnt, resp_blockHsh);
+    memcpy(totalHsh, resbuf + resp_len + resp_statCo + resp_blockNr + resp_blockCnt + resp_blockHsh, resp_totHsh);
+    
+
+    // The response itself
+    uint32_t len;
+    memcpy(&len, length, sizeof(uint32_t));
+    len = OSSwapBigToHostConstInt32(len);
+    char response[len];
+    memcpy(response, resbuf + resp_len + resp_statCo + resp_blockNr + resp_blockCnt + resp_blockHsh + resp_totHsh, len);
+    response[len] = '\0';
+    printf(response);
 }
+
 void generate_salt(char salt[], int size) {
     for (int i=0; i<SALT_LEN; i++)
     {
@@ -236,7 +292,7 @@ void save_to_disc(char* username, char* salt) {
 void find_file(char* username, char* salt, int buff_size) {
     // DIR* dir = opendir(directory);
     // if (dir == NULL) {
-    //     perror("Kunne ikke åbne mappen");
+    //     perror("Could not open directory");
     //     return NULL;
     // }
 
@@ -256,8 +312,6 @@ void find_file(char* username, char* salt, int buff_size) {
     // free(file);
     fclose(file);
 }
-//finde en fil baseret på username
-        //eksistere fil med bestemt username allerede
 
 
 
@@ -378,7 +432,8 @@ int main(int argc, char **argv)
     // Retrieve the larger file, that requires support for blocked messages. As
     // handed out, this line will run every time this client starts, and so 
     // should be removed if user interaction is added
-    get_file(username, password, user_salt, "hamlet.txt");
+    
+    //get_file(username, password, user_salt, "hamlet.txt");
 
     exit(EXIT_SUCCESS);
 }
