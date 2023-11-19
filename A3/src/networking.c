@@ -369,14 +369,12 @@ int main(int argc, char **argv)
     fprintf(stdout, "Enter a username to proceed: ");
     scanf("%16s", username);
     while ((c = getchar()) != '\n' && c != EOF);
-    printf("Username before: %lu \n", sizeof(username));
     // Clean up username string as otherwise some extra chars can sneak in.
     for (int i=strlen(username); i<USERNAME_LEN; i++)
     {
         username[i] = '\0';
     }
 
-    printf("Username after: %lu \n", sizeof(username));
  
     fprintf(stdout, "Enter your password to proceed: ");
     scanf("%16s", password);
