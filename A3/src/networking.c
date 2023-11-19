@@ -167,20 +167,22 @@ void register_user(char* username, char* password, char* user_salt) {
     // Ensuring with checksum that the response message has not been tampered with
     hashdata_t thisHash;
     get_data_sha(response, thisHash, len, SHA256_HASH_SIZE);    
-    assert(memcmp(thisHash, totalHsh, SHA256_HASH_SIZE) == 0);
-
-
-    //Checking the status code:
-    // First converte:
-    uint32_t status;
-    memcpy(&status, statusCode, sizeof(uint32_t));
-    status = OSSwapBigToHostInt32(status);
-    // Then check:
-    if(status == 1){
-        printf("Got response: %s \n", response);
+    if(memcmp(thisHash, totalHsh, SHA256_HASH_SIZE) != 0) {
+        printf("Checksum error - given respond is not valid \n");
     }
     else {
-        printf("Got unexpected status code: %d \n", status);
+        //Checking the status code:
+        // First converte:
+        uint32_t status;
+        memcpy(&status, statusCode, sizeof(uint32_t));
+        status = OSSwapBigToHostInt32(status);
+        // Then check:
+        if(status == 1){
+            printf("Got response: %s \n", response);
+        }
+        else {
+            printf("Got unexpected status code: %d \n", status);
+        }
     }
     close(clientfd);
 }
@@ -205,6 +207,7 @@ void get_file(char* username, char* password, char* salt, char* to_get)
     
     //Copying data to struct RequestHeader_t
     RequestHeader_t request_header;    
+
     //Setting username
     memcpy(&(request_header.username),username, USERNAME_LEN);
    
@@ -216,7 +219,8 @@ void get_file(char* username, char* password, char* salt, char* to_get)
     request.header = request_header;
     memcpy(&(request.payload), to_get, PATH_LEN);
 
-    printf("\n\n%s\n\n",request.payload);
+    //printf("\n\n%s\n\n",request.payload);
+
     //Sending request_header to server 
     compsys_helper_writen(clientfd, &request, sizeof(request));
 
@@ -251,7 +255,7 @@ void get_file(char* username, char* password, char* salt, char* to_get)
     char response[len];
     memcpy(response, resbuf + resp_len + resp_statCo + resp_blockNr + resp_blockCnt + resp_blockHsh + resp_totHsh, len);
     response[len] = '\0';
-    printf(response);
+    printf("%s \n", response);
 }
 
 void generate_salt(char salt[], int size) {
@@ -272,29 +276,23 @@ void save_to_disc(char* username, char* salt) {
         return;
         }
     }
-    //Hvis folder eksistere, lig filerne ind
+    // If folder exists, put in file
     char file_path[256];
     strcpy(file_path, folderName);
     strcat(file_path, username);
     strcat(file_path, ".salt");
     FILE *fptr;
-    // create file with username as filename
 
+    // create file with username as filename
     fptr = fopen(file_path, "w");
     if (fptr == NULL) {
         perror("Error creating file");
         return;
     }
-    printf("SALT: %s \n",salt);
     fprintf(fptr, "%s\n", salt);
     fclose(fptr);
 }
 void find_file(char* username, char* salt, int buff_size) {
-    // DIR* dir = opendir(directory);
-    // if (dir == NULL) {
-    //     perror("Could not open directory");
-    //     return NULL;
-    // }
 
 
     char file_path[256];
@@ -308,8 +306,8 @@ void find_file(char* username, char* salt, int buff_size) {
     }
 
     fgets(salt, buff_size, file);
-    // free(file_path);
-    // free(file);
+    
+
     fclose(file);
 }
 
@@ -407,9 +405,7 @@ int main(int argc, char **argv)
     // repeatedly test the same user credentials by using the hard coded value
     // below instead, and commenting out this randomly generating section.
 
-
-    fprintf(stdout, "Using salt: %s\n", user_salt);
-
+    // fprintf(stdout, "Using salt: %s\n", user_salt);
 
     // The following function calls have been added as a structure to a 
     // potential solution demonstrating the core functionality. Feel free to 
@@ -426,15 +422,15 @@ int main(int argc, char **argv)
     // As handed out, this line will run every time this client starts, and so 
     // should be removed if user interaction is added
 
-    // get_file(username, password, user_salt, "tiny.txt");
-    // printf("get_file_small\n");
+    get_file(username, password, user_salt, "tiny.txt");
+
 
 
     // Retrieve the larger file, that requires support for blocked messages. As
     // handed out, this line will run every time this client starts, and so 
     // should be removed if user interaction is added
     
-    //get_file(username, password, user_salt, "hamlet.txt");
+    get_file(username, password, user_salt, "hamlet.txt");
 
     exit(EXIT_SUCCESS);
 }
