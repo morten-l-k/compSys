@@ -1,0 +1,8 @@
+#Ignore dSYM folder
+*.dSYM
+
+#Ignore out files
+*.o
+
+#Ignore compiled files
+peer
