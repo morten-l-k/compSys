@@ -1,0 +1,5 @@
+#Ignore python folder
+/python
+
+#Ignore README
+README.md
