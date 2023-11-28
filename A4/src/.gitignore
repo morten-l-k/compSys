@@ -6,3 +6,10 @@
 
 #Ignore compiled files
 peer
+
+#Ignore end_script.c
+end_script.c
+end_script
+
+#Ignore txt files
+*.txt
