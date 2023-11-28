@@ -99,6 +99,7 @@ void get_random_peer(PeerAddress_t* peer_address)
 { 
     PeerAddress_t** potential_peers = malloc(sizeof(PeerAddress_t*));
     uint32_t potential_count = 0; 
+    // printf("PEER IN NETWORK: %s, %s, \n",network[0]->ip,my_address->ip);
     for (uint32_t i=0; i<peer_count; i++)
     {
         if (strcmp(network[i]->ip, my_address->ip) != 0 
@@ -331,10 +332,28 @@ void send_message(PeerAddress_t peer_address, int command, char* request_body)
 
     if (reply_status == STATUS_OK)
     {
-        if (command == COMMAND_REGISTER)
-        {
-            // Your code here. This code has been added as a guide, but feel 
-            // free to add more, or work in other parts of the code
+        if (command == COMMAND_REGISTER) { 
+            //Reallocating memory for network to contain one more pointer       
+            network = realloc(network,(size_t)((peer_count+1) * sizeof(PeerAddress_t*)));
+
+            //Constructing new peer to be added to network
+            PeerAddress_t new_peer;
+            memset(new_peer.ip,'\0',IP_LEN);
+            memset(new_peer.port,'\0',PORT_LEN);
+            
+            memcpy(new_peer.ip,reply_body,IP_LEN);
+
+            //Converting port bytes from network to host order
+            uint32_t *tmp = ntohl(*(uint32_t*)&reply_body[IP_LEN]);
+            sprintf(new_peer.port,"%d",tmp);
+
+            //Allocating space for new peer to be added
+            network[peer_count] = malloc(sizeof(PeerAddress_t));
+
+            memcpy(network[peer_count],&new_peer,sizeof(PeerAddress_t));
+
+            //Updating peer count
+            peer_count++;
         }
     } 
     else
@@ -425,7 +444,20 @@ void handle_server_request(int connfd)
 void* server_thread()
 {
     // Your code here. This function has been added as a guide, but feel free 
-    // to add more, or work in other parts of the code
+    // to add more, or work in other parts of the code 
+        
+    //NOTE: code added below is provided by Morten
+    while (1)
+    {
+        sleep(1);
+    
+        int socket_fd = compsys_helper_open_listenfd(my_address->port);
+        printf("Socket_fd is at: %d\n",socket_fd);
+        if (socket_fd < 0) {
+            //Implement code
+            fprintf(stderr, "Error: %d in server_thread\n", errno);
+        }
+    }
 }
 
 

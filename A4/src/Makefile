@@ -1,5 +1,5 @@
 #GCC=gcc -g -Wall -Wextra -pedantic -std=gnu11
-GCC=gcc -g -Wall -Wextra -pedantic -std=gnu11
+GCC=gcc-13 -g -Wall -Wextra -pedantic -std=gnu11
 LD_FLAGS= -lpthread -lm
 
 all: peer
@@ -23,6 +23,9 @@ zip: ../../src.zip
 ../../src.zip:
 	make clean
 	cd ../.. && zip -r handout/src.zip handout/src/Makefile handout/src/*.c handout/src/*.h handout/python/*.py handout/python/*/*.py
+
+end_script.c: end_script.c
+	$(CC) -o end_scipt end_scipt.c
 
 clean:
 	rm -rf *.o peer sha256 vgcore*
