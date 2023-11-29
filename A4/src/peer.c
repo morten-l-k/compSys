@@ -435,6 +435,9 @@ void handle_server_request(int connfd)
 {
     // Your code here. This function has been added as a guide, but feel free 
     // to add more, or work in other parts of the code
+
+    //IMPLEMENT WITH compsys_helper_readlineb , SINCE WE HAVE NOT ESTABLISHED SOCKET-CONNECTION
+    //WE CAN START READING REQUEST SEND FROM CLIENT
 }
 
 /*
@@ -446,16 +449,22 @@ void* server_thread()
     // Your code here. This function has been added as a guide, but feel free 
     // to add more, or work in other parts of the code 
         
-    //NOTE: code added below is provided by Morten
-    while (1)
-    {
-        sleep(1);
+    int socket_fd = compsys_helper_open_listenfd(my_address->port);    
+    printf("Socket_fd is at: %d\n",socket_fd);
     
-        int socket_fd = compsys_helper_open_listenfd(my_address->port);
-        printf("Socket_fd is at: %d\n",socket_fd);
-        if (socket_fd < 0) {
-            //Implement code
-            fprintf(stderr, "Error: %d in server_thread\n", errno);
+    if (socket_fd < 0) {
+        fprintf(stderr, "Error: %d in server_thread\n", errno);
+    }
+
+    while (1) {
+        //Accept redirects clients to a new socket, so new clients can keep conneting to main socket
+        struct sockaddr *new_address;
+        struct sock_len *sock_len;
+        int connfd = accept(socket_fd,new_address,sock_len);
+        printf("New socket created at socket: %i\n",connfd);
+
+        if(connfd < 0) {
+            fprintf(stderr, "Error: %d in server_thread when creating new socket\n", errno);
         }
     }
 }
