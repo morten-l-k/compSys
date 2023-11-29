@@ -1,6 +1,6 @@
 #Peer's own IP and port
 my_ip: 127.0.0.1
-my_port: 23316
+my_port: 23322
 
 #Peer to connect to
 peer_ip: 0.0.0.0
