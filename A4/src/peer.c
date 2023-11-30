@@ -353,7 +353,9 @@ void send_message(PeerAddress_t peer_address, int command, char* request_body)
             memcpy(network[peer_count],&new_peer,sizeof(PeerAddress_t));
 
             //Updating peer count
+            pthread_mutex_lock(&network_mutex);
             peer_count++;
+            pthread_mutex_unlock(&network_mutex);
         }
     } 
     else
@@ -405,6 +407,30 @@ void handle_register(int connfd, char* client_ip, int client_port_int)
 {
     // Your code here. This function has been added as a guide, but feel free 
     // to add more, or work in other parts of the code
+
+    for(int i = 0; i < peer_count; i++) {
+        printf("i is: %d\n",i);
+        if (strncmp(client_ip,network[i]->ip,IP_LEN) == 0) {
+            //handle if client peer is already in list
+            return;
+        }
+    }
+
+    //Reallocating new memory since the peer was not already in network list
+    network = realloc(network,(size_t)(peer_count+1) * sizeof(PeerAddress_t*));
+    network[peer_count] = malloc(sizeof(PeerAddress_t));
+
+    PeerAddress_t new_peer;
+    memcpy(new_peer.ip,client_ip,IP_LEN);
+    sprintf(new_peer.port,"%d",client_port_int);
+
+    //Copying new_peer to network
+    memcpy(network[peer_count],&new_peer,sizeof(PeerAddress_t));
+
+    //Incrementing peer_count
+    pthread_mutex_lock(&network_mutex);
+    peer_count++;
+    pthread_mutex_unlock(&network_mutex);
 }
 
 /*
@@ -458,11 +484,11 @@ void handle_server_request(int connfd)
     uint32_t length = ntohl(*(uint32_t*)&request_header[24]);
     
     if (command_code == COMMAND_REGISTER) {
+        printf("About to handle register\n");
         handle_register(connfd,&IP_address,port);
     }
 
-    if (command_code == COMMAND_RETREIVE)
-    {
+    if (command_code == COMMAND_RETREIVE) {
         /* code */
     }
 
