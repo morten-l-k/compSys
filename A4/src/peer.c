@@ -435,10 +435,44 @@ void handle_server_request(int connfd)
 {
     // Your code here. This function has been added as a guide, but feel free 
     // to add more, or work in other parts of the code
+    sleep(1);
+    compsys_helper_state_t state;
 
-    //IMPLEMENT WITH compsys_helper_readlineb , SINCE WE HAVE NOT ESTABLISHED SOCKET-CONNECTION
-    //WE CAN START READING REQUEST SEND FROM CLIENT
-}
+    //Associate state buffer with descriptor
+    compsys_helper_readinitb(&state,connfd);
+
+    //Reading request to buffer
+    char msg_buf[MAX_MSG_LEN];
+    compsys_helper_readnb(&state,&msg_buf,REQUEST_HEADER_LEN);
+
+    //Unpacking buffered data into variables
+    char request_header[REQUEST_HEADER_LEN];
+
+    memcpy(&request_header,msg_buf,REQUEST_HEADER_LEN);
+
+    char IP_address[16];
+    memcpy(&IP_address,&request_header,IP_LEN);
+    
+    uint32_t port = ntohl(*(uint32_t*)&request_header[16]);
+    uint32_t command_code = ntohl(*(uint32_t*)&request_header[20]);
+    uint32_t length = ntohl(*(uint32_t*)&request_header[24]);
+    
+    if (command_code == COMMAND_REGISTER) {
+        handle_register(connfd,&IP_address,port);
+    }
+
+    if (command_code == COMMAND_RETREIVE)
+    {
+        /* code */
+    }
+
+    if(command_code == COMMAND_INFORM) {
+
+    }
+    
+    
+    
+    }
 
 /*
  * Function to act as basis for running the server thread. This thread will be
@@ -459,13 +493,17 @@ void* server_thread()
     while (1) {
         //Accept redirects clients to a new socket, so new clients can keep conneting to main socket
         struct sockaddr *new_address;
-        struct sock_len *sock_len;
+        struct socklen_t *sock_len;
+        printf("About to accept\n");
+
         int connfd = accept(socket_fd,new_address,sock_len);
         printf("New socket created at socket: %i\n",connfd);
 
         if(connfd < 0) {
             fprintf(stderr, "Error: %d in server_thread when creating new socket\n", errno);
         }
+
+        handle_server_request(connfd);
     }
 }
 
