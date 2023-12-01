@@ -333,10 +333,33 @@ void send_message(PeerAddress_t peer_address, int command, char* request_body)
     if (reply_status == STATUS_OK)
     {
         if (command == COMMAND_REGISTER) { 
-            //Reallocating memory for network to contain one more pointer       
-            network = realloc(network,(size_t)((peer_count+1) * sizeof(PeerAddress_t*)));
+            //Reallocating memory for network to contain one more pointer                   
+            int peers_in_network = 1 + (reply_length / sizeof(NetworkAddress_t));
+            network = realloc(network,(size_t)(peers_in_network * sizeof(PeerAddress_t*)));
+            
+            // for (int i = 0; i < peers_in_network; i++) {
+            //     //Constructing new peer to be added to own network
+            //     PeerAddress_t new_peer;
+            //     memset(new_peer.ip,'\0',IP_LEN);
+            //     memset(new_peer.port,'\0',PORT_LEN);
 
-            //Constructing new peer to be added to network
+            //     memcpy(new_peer.ip,reply_body + (i * sizeof(NetworkAddress_t)), IP_LEN);
+
+            //     uint32_t *tmp = \
+            //         ntohl(*(uint32_t*)&reply_body[IP_LEN + (i * sizeof(NetworkAddress_t))]);
+            //     sprintf(new_peer.port,"%d",tmp);
+
+            //     pthread_mutex_lock(&network_mutex);
+            //     //Allocating space for new peer to be added
+            //     network[i + 1] = malloc(sizeof(PeerAddress_t));
+
+            //     //Copying new peer to network
+            //     memcpy(network[i + 1],&new_peer,sizeof(PeerAddress_t));
+            //     peer_count++;
+            //     pthread_mutex_unlock(&network_mutex);
+            // }
+            
+            // Constructing new peer to be added to network
             PeerAddress_t new_peer;
             memset(new_peer.ip,'\0',IP_LEN);
             memset(new_peer.port,'\0',PORT_LEN);
@@ -347,11 +370,11 @@ void send_message(PeerAddress_t peer_address, int command, char* request_body)
             uint32_t *tmp = ntohl(*(uint32_t*)&reply_body[IP_LEN]);
             sprintf(new_peer.port,"%d",tmp);
 
+            pthread_mutex_lock(&network_mutex);
             //Allocating space for new peer to be added
             network[peer_count] = malloc(sizeof(PeerAddress_t));
 
             //Copying new peer to network
-            pthread_mutex_lock(&network_mutex);
             memcpy(network[peer_count],&new_peer,sizeof(PeerAddress_t));
             peer_count++;
             pthread_mutex_unlock(&network_mutex);
@@ -405,20 +428,15 @@ void* client_thread(void* thread_args)
 void handle_register(int connfd, char* client_ip, int client_port_int)
 {    
     //SEND NETWORK LIST TO PEER (1/2)
-
     //Creating reply header for response
-    //TODO: OLIVER IMPLEMENT CODE FOR REPLY_HEADER
     ReplyHeader_t reply;
     reply.length = htobe32(peer_count * sizeof(NetworkAddress_t));
     reply.status = htobe32(1); //htobe32 converts from host/little-endian to big-endian/network order
-    reply.this_block;
-    reply.block_count = \
-    ceil(peer_count * sizeof(NetworkAddress_t) / (MAX_MSG_LEN - REPLY_HEADER_LEN));
-
+    reply.this_block = 1;
+    reply.block_count = reply.length < (MAX_MSG_LEN - REPLY_HEADER_LEN) ? 1 : 2;
     reply.block_hash;
     reply.total_hash;
 
-    printf("Peer count is: %d\n",peer_count);
     NetworkAddress_t reply_body[peer_count];
 
     //Creating reply body for response
@@ -428,31 +446,37 @@ void handle_register(int connfd, char* client_ip, int client_port_int)
         //Aquiring lock so other thread can't access network list
         pthread_mutex_lock(&network_mutex);
         memcpy(&peer_i.ip,network[i]->ip,IP_LEN);
-        // printf("Port string to convert: %s\n",network[i]->port);
         char *endptr;
         uint32_t u_port = htobe32(strtol(&network[i]->port,&endptr,10));
         pthread_mutex_unlock(&network_mutex);
 
         memcpy(&peer_i.port,&u_port,sizeof(uint32_t));
-        // printf("Port in network-order is: %d\n",u_port);
 
         memcpy(&reply_body[i].ip,&peer_i.ip,IP_LEN);
         reply_body[i].port = peer_i.port;
-        // printf("Reply_body[%d] IP IS: %s, Port: %d\n",i,reply_body[i].ip,reply_body[i].port);
     }
 
-    //Send response to client
-    //TODO: MORTEN - IMPLEMENT CODE
+    hashdata_t hash;
+    
+    //Converting reply_body to char* array
+    char body_src[ntohl(reply.length)];
+    memcpy(&body_src,&reply_body,ntohl(reply.length));
+
+    get_data_sha(body_src,hash,sizeof(body_src),SHA256_HASH_SIZE);
+    
+    memcpy(&reply.block_hash,&hash,sizeof(hashdata_t));
+    memcpy(&reply.total_hash,&hash,sizeof(hashdata_t));
+
+    //Assemble reply header and reply body
+    char* total_reply[REPLY_HEADER_LEN + ntohl(reply.length)];
+    memcpy(total_reply,&reply,REPLY_HEADER_LEN);
+    memcpy(total_reply + REPLY_HEADER_LEN,&reply_body,ntohl(reply.length));
+    
+    //Send reply to client
+    compsys_helper_writen(connfd,total_reply,ntohl(reply.length) + REPLY_HEADER_LEN);
 
     //ADD PEER TO NETWORK (2/2)
-    // for(int i = 0; i < peer_count; i++) {
-    //     printf("i is: %d\n",i);
-    //     if (strncmp(client_ip,network[i]->ip,IP_LEN) == 0) {
-    //         return; //If peer already in list, simply return
-    //     }
-    // }
-
-    //Reallocating new memory since the peer was not already in network list
+    //Reallocating new memory to update own network list
     network = realloc(network,(size_t)(peer_count+1) * sizeof(PeerAddress_t*));
     network[peer_count] = malloc(sizeof(PeerAddress_t));
 
@@ -465,7 +489,6 @@ void handle_register(int connfd, char* client_ip, int client_port_int)
     memcpy(network[peer_count],&new_peer,sizeof(PeerAddress_t));
     peer_count++;
     pthread_mutex_unlock(&network_mutex);
-    
 }
 
 /*
@@ -520,7 +543,6 @@ void handle_server_request(int connfd)
 {
     // Your code here. This function has been added as a guide, but feel free 
     // to add more, or work in other parts of the code
-    sleep(1);
     compsys_helper_state_t state;
 
     //Associate state buffer with descriptor
@@ -543,7 +565,6 @@ void handle_server_request(int connfd)
     uint32_t length = ntohl(*(uint32_t*)&request_header[24]);
     
     if (command_code == COMMAND_REGISTER) {
-        printf("About to handle register\n");
         handle_register(connfd,&IP_address,port);
     }
 
@@ -569,7 +590,6 @@ void* server_thread()
     // to add more, or work in other parts of the code 
         
     int socket_fd = compsys_helper_open_listenfd(my_address->port);    
-    printf("Socket_fd is at: %d\n",socket_fd);
     
     if (socket_fd < 0) {
         fprintf(stderr, "Error: %d in server_thread\n", errno);
@@ -579,10 +599,9 @@ void* server_thread()
         //Accept redirects clients to a new socket, so new clients can keep conneting to main socket
         struct sockaddr *new_address;
         struct socklen_t *sock_len;
-        printf("About to accept\n");
 
+        printf("Waiting for peer to connect\n");
         int connfd = accept(socket_fd,new_address,sock_len);
-        printf("New socket created at socket: %i\n",connfd);
 
         if(connfd < 0) {
             fprintf(stderr, "Error: %d in server_thread when creating new socket\n", errno);
