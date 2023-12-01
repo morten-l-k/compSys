@@ -474,8 +474,32 @@ void handle_register(int connfd, char* client_ip, int client_port_int)
  */
 void handle_inform(char* request)
 {
-    // Your code here. This function has been added as a guide, but feel free 
-    // to add more, or work in other parts of the code
+    //Reallocating memory for network to contain one more pointer       
+    network = realloc(network,(size_t)((peer_count+1) * sizeof(PeerAddress_t*)));
+
+    //Constructing new peer to be added to network
+    PeerAddress_t new_peer;
+    memset(new_peer.ip,'\0',IP_LEN);
+    memset(new_peer.port,'\0',PORT_LEN);
+    
+    memcpy(new_peer.ip,request,IP_LEN);
+
+    //Converting port bytes from network to host order
+    uint32_t *tmp = ntohl(*(uint32_t*)&request[IP_LEN]);
+    sprintf(new_peer.port,"%d",tmp);
+
+    //Allocating space for new peer to be added
+    network[peer_count] = malloc(sizeof(PeerAddress_t));
+
+
+    //Updating peer count
+    pthread_mutex_lock(&network_mutex);
+    memcpy(network[peer_count],&new_peer,sizeof(PeerAddress_t));
+    peer_count++;
+    pthread_mutex_unlock(&network_mutex);
+    for(u_int32_t i = 0; i < peer_count; i++) {
+        printf("Peer %i: IP: %s, port: %s \n", i, network[i]->ip, network[i]->port);
+    }
 }
 
 /*
