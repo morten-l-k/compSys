@@ -386,6 +386,9 @@ void* client_thread(void* thread_args)
     // Update peer_address with random peer from network
     get_random_peer(peer_address);
 
+    while(1){
+        //nothing
+    }
     // Retrieve the smaller file, that doesn't not require support for blocks
     send_message(*peer_address, COMMAND_RETREIVE, "tiny.txt");
 
@@ -407,22 +410,20 @@ void handle_register(int connfd, char* client_ip, int client_port_int)
     //SEND NETWORK LIST TO PEER (1/2)
 
     //Creating reply header for response
-    //TODO: OLIVER IMPLEMENT CODE FOR REPLY_HEADER
-    ReplyHeader_t reply;
-    reply.length = htobe32(peer_count * sizeof(NetworkAddress_t));
-    reply.status = htobe32(1); //htobe32 converts from host/little-endian to big-endian/network order
-    reply.this_block;
-    reply.block_count = \
-    ceil(peer_count * sizeof(NetworkAddress_t) / (MAX_MSG_LEN - REPLY_HEADER_LEN));
+    // But not hashes (as they need the body)
+    // or this_block (depends on the block)
+    
 
-    reply.block_hash;
-    reply.total_hash;
+    /* char* reply_body = malloc(sizeof(NetworkAddress_t)*peer_count + 1);
+    memcpy(reply_body, msg_buf, r); */
 
     printf("Peer count is: %d\n",peer_count);
     NetworkAddress_t reply_body[peer_count];
 
+
+
     //Creating reply body for response
-    for (int i = 0; i < peer_count; i++) {
+    for (u_int32_t i = 0; i < peer_count; i++) {
         NetworkAddress_t peer_i;
 
         //Aquiring lock so other thread can't access network list
@@ -440,6 +441,51 @@ void handle_register(int connfd, char* client_ip, int client_port_int)
         reply_body[i].port = peer_i.port;
         // printf("Reply_body[%d] IP IS: %s, Port: %d\n",i,reply_body[i].ip,reply_body[i].port);
     }
+
+    // Blocks needed:
+    uint32_t blocks_needed = \
+    ceil(peer_count * sizeof(NetworkAddress_t) / (MAX_MSG_LEN - REPLY_HEADER_LEN));
+    
+
+
+    // Sending blocks of network list to newly registerede peer
+    /* for(u_int32_t i = 0; i < blocks_needed; i++) {
+        ReplyHeader_t reply;
+        reply.length = htobe32(peer_count * sizeof(NetworkAddress_t));
+        reply.status = htobe32(1); //htobe32 converts from host/little-endian to big-endian/network order
+        reply.this_block = i; 
+        reply.block_count = blocks_needed;
+        // Initializing the total hash
+        get_data_sha(reply_body, reply.total_hash, sizeof(reply_body),SHA256_HASH_SIZE);
+        // Create the payload for given block
+        
+        // Initializing the block hash
+        get_data_sha(reply_body, reply.block_hash, sizeof(reply_body),SHA256_HASH_SIZE);
+    } */
+
+    // Only sending one block (above should be properly implemented to send long network list
+    // throgh multiple blocks )
+    ReplyHeader_t reply_header;
+    reply_header.length = htobe32(peer_count * sizeof(NetworkAddress_t));
+    reply_header.status = htobe32(1); //htobe32 converts from host/little-endian to big-endian/network order
+    reply_header.this_block = 1; 
+    reply_header.block_count = blocks_needed;
+    // Initializing the total hash
+    get_data_sha(reply_body, reply_header.total_hash, sizeof(reply_body),SHA256_HASH_SIZE); 
+    // Initializing the block hash
+    get_data_sha(reply_body, reply_header.block_hash, sizeof(reply_body),SHA256_HASH_SIZE);
+    
+    // Initializing msg buffer
+    char msg_buf[MAX_MSG_LEN];
+    
+    memcpy(msg_buf, &reply_header, REPLY_HEADER_LEN);
+    memcpy(msg_buf+REPLY_HEADER_LEN, network, sizeof(reply_body));
+
+
+
+
+
+    
 
     //Send response to client
     //TODO: MORTEN - IMPLEMENT CODE
@@ -474,6 +520,7 @@ void handle_register(int connfd, char* client_ip, int client_port_int)
  */
 void handle_inform(char* request)
 {
+    printf("HERE\n");
     //Reallocating memory for network to contain one more pointer       
     network = realloc(network,(size_t)((peer_count+1) * sizeof(PeerAddress_t*)));
 
@@ -491,7 +538,7 @@ void handle_inform(char* request)
     //Allocating space for new peer to be added
     network[peer_count] = malloc(sizeof(PeerAddress_t));
 
-
+    printf("HERE\n");
     //Updating peer count
     pthread_mutex_lock(&network_mutex);
     memcpy(network[peer_count],&new_peer,sizeof(PeerAddress_t));
@@ -552,11 +599,13 @@ void handle_server_request(int connfd)
     }
 
     if(command_code == COMMAND_INFORM) {
-
+        printf("HERE 2\n");
+        char* request = malloc(sizeof(PeerAddress_t));
+        printf("HERE 3\n");
+        memcpy(request, &state.compsys_helper_buf[REQUEST_HEADER_LEN], sizeof(PeerAddress_t));
+        printf("HERE 4\n");
+        handle_inform(request);
     }
-    
-    
-    
     }
 
 /*
@@ -587,7 +636,7 @@ void* server_thread()
         if(connfd < 0) {
             fprintf(stderr, "Error: %d in server_thread when creating new socket\n", errno);
         }
-
+        printf("HERE1\n");
         handle_server_request(connfd);
     }
 }
