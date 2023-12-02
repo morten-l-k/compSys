@@ -409,9 +409,7 @@ void* client_thread(void* thread_args)
     // Update peer_address with random peer from network
     get_random_peer(peer_address);
 
-    while(1){
-        //nothing
-    }
+
     // Retrieve the smaller file, that doesn't not require support for blocks
     send_message(*peer_address, COMMAND_RETREIVE, "tiny.txt");
 
@@ -506,7 +504,7 @@ void handle_register(int connfd, char* client_ip, int client_port_int)
  */
 void handle_inform(char* request)
 {
-    printf("HERE\n");
+    
     //Reallocating memory for network to contain one more pointer       
     network = realloc(network,(size_t)((peer_count+1) * sizeof(PeerAddress_t*)));
 
@@ -524,15 +522,11 @@ void handle_inform(char* request)
     //Allocating space for new peer to be added
     network[peer_count] = malloc(sizeof(PeerAddress_t));
 
-    printf("HERE\n");
     //Updating peer count
     pthread_mutex_lock(&network_mutex);
     memcpy(network[peer_count],&new_peer,sizeof(PeerAddress_t));
     peer_count++;
     pthread_mutex_unlock(&network_mutex);
-    for(u_int32_t i = 0; i < peer_count; i++) {
-        printf("Peer %i: IP: %s, port: %s \n", i, network[i]->ip, network[i]->port);
-    }
 }
 
 /*
@@ -583,11 +577,8 @@ void handle_server_request(int connfd)
     }
 
     if(command_code == COMMAND_INFORM) {
-        printf("HERE 2\n");
         char* request = malloc(sizeof(PeerAddress_t));
-        printf("HERE 3\n");
         memcpy(request, &state.compsys_helper_buf[REQUEST_HEADER_LEN], sizeof(PeerAddress_t));
-        printf("HERE 4\n");
         handle_inform(request);
     }
     }
