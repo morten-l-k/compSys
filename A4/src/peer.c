@@ -423,8 +423,90 @@ void handle_inform(char* request)
  */
 void handle_retreive(int connfd, char* request)
 {
-    // Your code here. This function has been added as a guide, but feel free 
-    // to add more, or work in other parts of the code
+    //Har en response ikke en header, som skal trækkes fra?
+
+    // Read a reply
+    //compsys_helper_readnb(&state, msg_buf, REPLY_HEADER_LEN);
+
+    // Extract the reply header 
+    // char reply_header[REPLY_HEADER_LEN];
+    // memcpy(reply_header, msg_buf, REPLY_HEADER_LEN);
+
+    char msg_buf[MAX_MSG_LEN];
+    FILE* fp;
+
+    if (access(request, F_OK) != 0)
+    {
+        char* response; // skal sættes
+        send_message_reponse(connfd, STATUS_BAD_REQUEST, response);
+        return;    
+    }
+    //Vi læser request fra client
+    fp = fopen(request, "rb");
+    if (fp == NULL) {
+        perror("Error reading file");
+        return;
+    }
+    //Læs filens størrelse
+    fseek(fp,0,SEEK_END);
+    long file_size = ftell(fp);
+    fseek(fp,0,SEEK_SET);
+    //Alloker memory
+    char* response = malloc(file_size);
+    if (response == NULL)
+    {
+        perror("Error allocating memory");
+        fclose(fp);
+        return;
+    }
+    
+    size_t read_bytes = fread(response,1,file_size,fp);
+    if (read_bytes != file_size)
+    {
+        perror("Error reading file");
+        fclose(fp);
+        free(response);
+        return;
+    }
+    //Størrelsen på det vi kan sende msg_buf-header
+    //Hvilken fil skal vi hente
+    // checke om filen eksistere
+    //Hent den fil, lokaliser filen?
+
+    send_message_reponse(connfd,STATUS_OK, response);
+    fclose(fp);
+    free(response);
+}
+
+//Besked til client
+void send_message_reponse(int connfd, int status, char *data) {
+    compsys_helper_state_t state;
+
+    // Setup connection
+    compsys_helper_readinitb(&state, connfd);
+
+    // Beregn hvor mange blokke skal sendes
+    int block_count = sizeof(data)/MAX_MSG_LEN+1; //Vi +1, da vi runder ned.
+    for (size_t i = 0; i < block_count; i++)
+    {
+        int from_index = i * MAX_MSG_LEN;
+        int to_index = sizeof(data)-from_index < MAX_MSG_LEN
+            ? sizeof(data)%MAX_MSG_LEN
+            : (i+1) * MAX_MSG_LEN;
+ 
+        // Construct a request message and send it to the peer
+        struct ReplyHeader reply_header;
+        reply_header.length = to_index-from_index;
+        reply_header.status = htonl(status);
+        reply_header.this_block = i; // Hvilekn block er vi kommet til
+        reply_header.block_count = block_count;
+        compsys_helper_writen(connfd, data, REQUEST_HEADER_LEN+ reply_header.length);
+
+    }
+    
+  
+
+
 }
 
 /*
