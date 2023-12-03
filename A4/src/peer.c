@@ -603,10 +603,6 @@ void send_message_reponse(int connfd, int status, char *data) {
         compsys_helper_writen(connfd, data, REQUEST_HEADER_LEN+ reply_header.length);
 
     }
-    
-  
-
-
 }
 
 /*
@@ -645,7 +641,7 @@ void handle_server_request(int connfd)
     if (command_code == COMMAND_RETREIVE) {
         char* request = malloc(length);
         memcpy(request, &state.compsys_helper_buf[REQUEST_HEADER_LEN], length);
-        handle_retrive(request);
+        handle_retreive(connfd, request);
        
     }
 
