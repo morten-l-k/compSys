@@ -535,21 +535,13 @@ void handle_inform(char* request)
  */
 void handle_retreive(int connfd, char* request)
 {
-    //Har en response ikke en header, som skal trækkes fra?
-
-    // Read a reply
-    //compsys_helper_readnb(&state, msg_buf, REPLY_HEADER_LEN);
-
-    // Extract the reply header 
-    // char reply_header[REPLY_HEADER_LEN];
-    // memcpy(reply_header, msg_buf, REPLY_HEADER_LEN);
 
     char msg_buf[MAX_MSG_LEN];
     FILE* fp;
 
     if (access(request, F_OK) != 0)
     {
-        char* response; // skal sættes
+        char* response = "Could not retrive file";
         send_message_reponse(connfd, STATUS_BAD_REQUEST, response);
         return;    
     }
@@ -580,17 +572,13 @@ void handle_retreive(int connfd, char* request)
         free(response);
         return;
     }
-    //Størrelsen på det vi kan sende msg_buf-header
-    //Hvilken fil skal vi hente
-    // checke om filen eksistere
-    //Hent den fil, lokaliser filen?
 
     send_message_reponse(connfd,STATUS_OK, response);
     fclose(fp);
     free(response);
 }
 
-//Besked til client
+//Message to clinet
 void send_message_reponse(int connfd, int status, char *data) {
     compsys_helper_state_t state;
 
@@ -655,7 +643,10 @@ void handle_server_request(int connfd)
     }
 
     if (command_code == COMMAND_RETREIVE) {
-        /* code */
+        char* request = malloc(length);
+        memcpy(request, &state.compsys_helper_buf[REQUEST_HEADER_LEN], length);
+        handle_retrive(request);
+       
     }
 
     if(command_code == COMMAND_INFORM) {
