@@ -123,44 +123,44 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             /* code */
         } else if ((opcode ^ JALR) == 0x00) {
             /* code */
-        } else if (opcode ^ BRANCH_INST == 0x00) {
-            if(func3 ^ BEQ == 0x00){
+        } else if ((opcode ^ BRANCH_INST) == 0x00) {
+            if((func3 ^ BEQ) == 0x00){
                 //call BEQ
-            } else if(func3 ^ BNE == 0x00) {
+            } else if((func3 ^ BNE) == 0x00) {
                 //call BNE
-            } else if(func3 ^ BLT == 0x00) {
+            } else if((func3 ^ BLT) == 0x00) {
                 //call BLT
-            } else if(func3 ^ BGE == 0x00) {
+            } else if((func3 ^ BGE) == 0x00) {
                 //call BGE
-            } else if(func3 ^ BLTU == 0x00) {
+            } else if((func3 ^ BLTU) == 0x00) {
                 //call BLTU
-            } else if(func3 ^ BGEU == 0x00) {
+            } else if((func3 ^ BGEU) == 0x00) {
                 //call BGEU
             } else {
                 printf("ERROR OCCURED - no such BRANCH instr. was found \n");
             }
 
-        } else if (opcode ^ LOAD_INST == 0x00) {
+        } else if ((opcode ^ LOAD_INST) == 0x00) {
             // TJEK OP PÅ BITSHIFTENE HER OG HVOVIDT DE FORSKELLIGE DELE ER SIGN EXTENDED ELLER EJ
             uint32_t base = (word << 12) >> 27;
             uint32_t rd = (word << 20) >> 27;
             int32_t offset = word >> 20;
 
-            if(func3 ^ LB == 0x00){
+            if((func3 ^ LB) == 0x00){
                 // sign extend the 8 bits to 32 bits
                 int32_t value = memory_rd_b(mem,reg[base] + offset);
                 reg[rd] = value;  
-            } else if(func3 ^ LH == 0x00) {
+            } else if((func3 ^ LH) == 0x00) {
                 // sign extend the 16 bits to 32 bits 
                 int32_t value = memory_rd_h(mem,reg[base] + offset); 
                 reg[rd] = value;
-            } else if(func3 ^ LW == 0x00) {
+            } else if((func3 ^ LW) == 0x00) {
                 reg[rd] = memory_rd_w(mem,reg[base] + offset); 
-            } else if(func3 ^ LBU == 0x00) {
+            } else if((func3 ^ LBU) == 0x00) {
                 // zero extend the 8 bits to 32 bits
                 uint32_t value = memory_rd_b(mem,reg[base] + offset);
                 reg[rd] = value;
-            } else if(func3 ^ LHU == 0x00) {
+            } else if((func3 ^ LHU) == 0x00) {
                 // zero extend the 16 bits to 32 bits
                 uint32_t value = memory_rd_h(mem, reg[base] + offset);
                 reg[rd] = value;
@@ -168,7 +168,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 printf("ERROR OCCURED - no such LOAD instr. was found \n");
             }
 
-        } else if (opcode ^ STORE_INST == 0x00) {
+        } else if ((opcode ^ STORE_INST) == 0x00) {
             uint32_t base = (word << 12) >> 27;
             uint32_t src = (word << 7) >> 27;
             uint32_t offset_0_4 = (word << 20) >> 27;
