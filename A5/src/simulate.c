@@ -18,6 +18,7 @@ enum Opcode {
 };
 
 
+
 //Returnerer antallet af instruktioner, som den har udført
 long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE *log_file) {
     int reg[REG_SIZE];
@@ -65,9 +66,29 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
         } else if (opcode ^ JALR == 0x00) {
             /* code */
         } else if (opcode ^ BRANCH_INST == 0x00) {
-            /* code */
+            if(func3 ^ 0x00 == 0x00){
+                //call BEQ
+            } else if(func3 ^ 0x01 == 0x00) {
+                //call BNE
+            } else if(func3 ^ 0x04 == 0x00) {
+                //call BLT
+            } else if(func3 ^ 0x05 == 0x00) {
+                //call BGE
+            } else if(func3 ^ 0x06 == 0x00) {
+                //call BLTU
+            } else if(func3 ^ 0x07 == 0x00) {
+                //call BGEU
+            } else {
+            printf("ERROR OCCURED - no such BRANCH instr. was found \n");
+            }
         } else if (opcode ^ LOAD_INST == 0x00) {
-            /* code */
+            if(func3 ^ 0x00 == 0x00){
+                //call LB
+            } else if(func3 ^ 0x01 == 0x00) {
+                //call LH
+            } else if(func3 ^ 0x02 == 0x00) {
+                //call LW
+            } 
         } else if (opcode ^ STORE_INST == 0x00) {
             /* code */
         } else if (opcode ^ IMMEDIATE_INST == 0x00) {
