@@ -3,7 +3,9 @@
 #include "./memory.h"
 #include <stdint.h>
 
-//DEFINING ENUM
+//TODO: IMPLEMENT PROGRAM COUNTER: program_counter = 0;
+
+//DEFINING ENUM OPCODE
 enum Opcode {
     ECALL = 0x73,
     LUI = 0x37,
@@ -17,9 +19,15 @@ enum Opcode {
     RTYPE_INST = 0x33, //Includes instructions: ADD, SUB, SLL, SLT and also MUL instructions...
 };
 
+enum StoreInstructions {
+    SB = 0x00,
+    SH = 0x01,
+    SW = 0x02,
+};
 
 //Returnerer antallet af instruktioner, som den har udført
 long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE *log_file) {
+    //TODO: IMPLEMENT PROGRAM COUNTER: program_counter = start_addr;
     int reg[REG_SIZE];
     const int hard_wired_zero = 0;
     reg[zero] = hard_wired_zero;
@@ -44,7 +52,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
     printf("first_word is: %d\n");
     printf("first_word opcode is: %d\n",first_word & 0x03);
 
-    for (int i = start_addr; i <= start_addr + 0x10000; i+= 4) {
+    for (int i = start_addr; i <= start_addr + 0x10000; i += 4) {
         //FETCH INSTRUCTION (1/5)
         int inst_word = memory_rd_w(mem,i);
 
@@ -69,7 +77,22 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
         } else if (opcode ^ LOAD_INST == 0x00) {
             /* code */
         } else if (opcode ^ STORE_INST == 0x00) {
-            /* code */
+            uint32_t base = (word << 12) >> 27;
+            uint32_t src = (word << 7) >> 27;
+            uint32_t offset_0_4 = (word << 20) >> 27;
+            uint32_t offset_5_11 = (word >> 25) << 5;
+            uint32_t total_offset = offset_0_4 + offset_5_11;
+
+            if (func3 ^ SB) {
+                //UKLART OM MEMORY_WR_H SELV HÅNDTERER KUN AT GEMME EN BYTE
+                memory_wr_b(mem,reg[base] + total_offset, reg[src]);
+            } else if (func3 ^ SH) {
+                //UKLART OM MEMORY_WR_H SELV HÅNDTERER KUN AT GEMME ET HALF-WORD
+                memory_wr_h(mem,reg[base] + total_offset,reg[src]);
+            } else if (func3 ^ SW) {
+                memory_wr_w(mem,reg[base] + total_offset,reg[src]);
+            }
+            
         } else if (opcode ^ IMMEDIATE_INST == 0x00) {
             /* code */
         } else if (opcode ^ RTYPE_INST == 0x00) {
@@ -82,6 +105,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
 
 
         //MEMORY (4/5) 
+
 
         //WRITEBACK (5/5)
     }
