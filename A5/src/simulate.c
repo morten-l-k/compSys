@@ -25,6 +25,15 @@ enum StoreInstructions {
     SW = 0x02,
 };
 
+enum ImmediateInstructions {
+    ADDI = 0x00,
+    SLTI = 0x02,
+    SLTIU = 0x03,
+    XORI = 0x04,
+    ORI = 0x06,
+    ANDI = 0x07,
+    SLLI = 0x01,
+};
 
 //Returnerer antallet af instruktioner, som den har udført
 long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE *log_file) {
@@ -115,7 +124,27 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             }
             
         } else if (opcode ^ IMMEDIATE_INST == 0x00) {
-            /* code */
+            if (func3 ^ ADDI) {
+                // ADDI
+            }
+            else if (func3 ^ SLTI) {
+                //SLTI
+            }
+            else if (func3 ^ SLTIU ) (
+                //SLTIU
+            )
+            else if (func3 ^ ORI) (
+                //ORI
+            )
+            else if ( func3 ^ ANDI) {
+                //ANDI
+            }
+            else if (func3 ^ SLLI) {
+                //SLLI
+            }
+            else
+                printf("Error - no such immediate instruktion found \n");
+
         } else if (opcode ^ RTYPE_INST == 0x00) {
             /* code */
         } else {
