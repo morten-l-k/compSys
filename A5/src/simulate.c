@@ -124,23 +124,29 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             }
             
         } else if (opcode ^ IMMEDIATE_INST == 0x00) {
-            if (func3 ^ ADDI) {
-                // ADDI
+            uint32_t base = (word >> 7) & 0x1F;
+            uint32_t src = (word >> 15) & 0x1F;
+            int32_t immVal = (word >> 20) & 0xFFF;
+
+            if ((func3 ^ ADDI) == 0x00) {
+                reg[base] = reg[src] + immVal;
+                }
+            // SLTI = set less than immediate
+            else if ((func3 ^ SLTI) == 0x00) {
+                reg[base] = (reg[src] < immVal) ? 1:0;
             }
-            else if (func3 ^ SLTI) {
-                //SLTI
+            //SLTIU = Set Less Than Immediate Unsigned
+            else if ((func3 ^ SLTIU )  == 0x00){
+                reg[base] = (reg[src] < (uint32_t)immVal) ? 1:0;
             }
-            else if (func3 ^ SLTIU ) (
-                //SLTIU
-            )
-            else if (func3 ^ ORI) (
-                //ORI
-            )
-            else if ( func3 ^ ANDI) {
-                //ANDI
+            else if ((func3 ^ XORI) == 0x00){
+                reg[base] = reg[src] ^ immVal;
             }
-            else if (func3 ^ SLLI) {
-                //SLLI
+            else if ((func3 ^ ORI) == 0x00){
+            }
+            else if ( (func3 ^ ANDI) == 0x00){
+            }
+            else if ((func3 ^ SLLI) == 0x00){
             }
             else
                 printf("Error - no such immediate instruktion found \n");
