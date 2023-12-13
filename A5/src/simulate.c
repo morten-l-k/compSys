@@ -97,6 +97,17 @@ enum ImmediateInstructions {
     SRAI = 0x20,
 };
 
+enum MulInstructions {
+    MUL = 0x00,
+    MULH = 0x01,
+    MULHSU = 0x02,
+    MULHU = 0x03,
+    DIV = 0x04,
+    DIVU = 0x05,
+    REM = 0x06,
+    REMU = 0x07,
+};
+
 //Returnerer antallet af instruktioner, som den har udført
 long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE *log_file) {
     //ASSEMBLY-FILEN KAN BARE BRUGES TIL AT FÅ EN GIVEN ASSEMBLER-KODE UD FRA EN GIVEN ADDRESSE.
@@ -241,7 +252,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             int signed_imm_11_0 = ((int)word) >> 20;
             uint32_t signbit = word >> 31;
           
-           uint32_t base = (word >> 7) & 0x1F;
+            uint32_t base = (word >> 7) & 0x1F;
             uint32_t src = (word >> 15) & 0x1F;
             int32_t immVal = (word >> 20) & 0xFFF;
 
@@ -351,6 +362,43 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                     uint64_t res = (uint64_t)reg[rs2] * (uint64_t)reg[rs1];
                     reg[rd] = res;
                 }
+                //Multiply High
+                else if (func3 ^ MULH == 0x00) {
+                    int64_t res = (uint64_t)((int64_t)reg[rs1] * (int64_t)reg[rs2]) >> 32;
+                    reg[rd] = res;
+                }
+                //Multiply High Signed/Unsigned
+                else if (func3 ^ MULHSU) {
+                    int64_t res = (int64_t)((int64_t)reg[rs1] * (uint64_t)reg[rs2]) >> 32;
+                    reg[rd] = res;
+                }
+                //Multiply High Unsigned
+                else if (func3 ^ MULHU) {
+                    int64_t res = (uint64_t)((uint64_t)reg[rs1] * (uint64_t)reg[rs2]) >> 32;
+                    reg[rd] = res;
+                }
+                //Divide 
+                else if (func3 ^ DIV) {
+                    /* code */
+                }
+                //Divide Unsigned
+                else if (func3 ^ DIVU) {
+                    /* code */
+                }
+                //Remainder
+                else if (func3 ^ REM) {
+                    /* code */
+                }
+                //Remainder Unsigned
+                else if (func3 ^ REMU) {
+                    /* code */
+                }
+                else {
+                printf("Error occured in MUL_TYPE\n");
+                }
+                
+                
+                
                 
 
             } else {
