@@ -45,6 +45,16 @@ enum StoreInstructions {
     SW = 0x02,
 };
 
+enum ImmediateInstructions {
+    ADDI = 0x00,
+    SLTI = 0x02,
+    SLTIU = 0x03,
+    XORI = 0x04,
+    ORI = 0x06,
+    ANDI = 0x07,
+    SLLI = 0x01,
+};
+
 enum RtypeInstructions {
     //Func7 bit sequences
     RTYPE_0 = 0x00,
@@ -230,10 +240,23 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             uint32_t imm_11_0 = word >> 20;
             int signed_imm_11_0 = ((int)word) >> 20;
             uint32_t signbit = word >> 31;
+          
+           uint32_t base = (word >> 7) & 0x1F;
+            uint32_t src = (word >> 15) & 0x1F;
+            int32_t immVal = (word >> 20) & 0xFFF;
 
-            if ((func3 ^ ADDI) == 0x00) {
-                /* code */
-            } else if ((func3 ^ XORI) == 0x00) {
+             if ((func3 ^ ADDI) == 0x00) {
+                reg[base] = reg[src] + immVal;
+                }
+            // SLTI = set less than immediate
+            else if ((func3 ^ SLTI) == 0x00) {
+                reg[base] = (reg[src] < immVal) ? 1:0;
+            }
+            //SLTIU = Set Less Than Immediate Unsigned
+            else if ((func3 ^ SLTIU )  == 0x00){
+                reg[base] = (reg[src] < (uint32_t)immVal) ? 1:0;
+            } 
+            else if ((func3 ^ XORI) == 0x00) {
                 if (signbit == 0x00) {
                     reg[rd] = ((uint32_t)reg[rs1]) ^ imm_11_0;
                 } else {
@@ -267,8 +290,6 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 printf("Error occured in IMMEDIATE_INST\n");
             }
             
-            
-            /* code */
         } else if ((opcode ^ RTYPE_INST) == 0x00) {
             uint32_t func7 = word >> 25;
             uint32_t rs1 = (word << 12) >> 27;
