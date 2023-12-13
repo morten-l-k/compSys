@@ -82,10 +82,27 @@ enum RtypeInstructions {
     REMU = 0x07,
 };
 
+enum ImmediateInstructions {
+    //Func3
+    ADDI = 0x00,
+    SLTI = 0x02,
+    SLTIU = 0x03,
+    XORI = 0x04,
+    ORI = 0x06,
+    ANDI = 0x07,
+    SLLI = 0x01,
+    SRLI_SRAI = 0x05,
+    //Func7
+    SRLI = 0x00,
+    SRAI = 0x20,
+};
+
 //Returnerer antallet af instruktioner, som den har udført
 long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE *log_file) {
+    //ASSEMBLY-FILEN KAN BARE BRUGES TIL AT FÅ EN GIVEN ASSEMBLER-KODE UD FRA EN GIVEN ADDRESSE.
+    //SÅ DVS. DET ER BARE EN NEMMERE MÅDE AT FÅ ASSEMBLE PÅ
     //TODO: IMPLEMENT PROGRAM COUNTER: program_counter = start_addr;
-    int reg[REG_SIZE];
+    int reg[REG_SIZE]; //TODO: Beslut om register skal være af uint32_t typer i stedet
     const int hard_wired_zero = 0;
     reg[zero] = hard_wired_zero;
 
@@ -134,8 +151,26 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
         } else if ((opcode ^ JALR) == 0x00) {
             /* code */
         } else if ((opcode ^ BRANCH_INST) == 0x00) {
+            uint32_t imm_1_4 = (((word << 20) >> 28) << 1);
+            uint32_t imm_5_10 = (((word << 1) >> 26) << 5);
+            uint32_t imm_11 = (((word << 24) >> 31) << 10);
+            uint32_t tmp_offset = imm_1_4 + imm_5_10 + imm_11;
+            uint32_t signbit = word >> 31;
+            uint32_t total_offset = 0x00000000;
+            //Padding leftmost bits if signbit is negative
+            if (signbit == 0x01) {
+                total_offset = 0xfffff000 + tmp_offset; 
+            } else {
+                total_offset = tmp_offset;
+            }
+            
+            uint32_t rs1 = (word << 12) >> 27;
+            uint32_t rs2 = (word << 7) >> 27;
+
             if((func3 ^ BEQ) == 0x00){
-                //call BEQ
+                if (reg[rs1] == reg[rs2]) {
+                    //PC + total_offset
+                }
             } else if((func3 ^ BNE) == 0x00) {
                 //call BNE
             } else if((func3 ^ BLT) == 0x00) {
@@ -151,7 +186,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             }
 
         } else if ((opcode ^ LOAD_INST) == 0x00) {
-            // TJEK OP PÅ BITSHIFTENE HER OG HVOVIDT DE FORSKELLIGE DELE ER SIGN EXTENDED ELLER EJ
+            // TJEK OP PÅ BITSHIFTENE HER OG HVORVIDT DE FORSKELLIGE DELE ER SIGN EXTENDED ELLER EJ
             uint32_t base = (word << 12) >> 27;
             uint32_t rd = (word << 20) >> 27;
             int32_t offset = word >> 20;
@@ -198,11 +233,19 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             }
             
         } else if ((opcode ^ IMMEDIATE_INST) == 0x00) {
-            uint32_t base = (word >> 7) & 0x1F;
+            uint32_t func7 = word >> 25;
+            uint32_t rs1 = (word << 12) >> 27;
+            uint32_t shamt = (word << 7) >> 27;
+            uint32_t rd = (word << 20) >> 27;
+            uint32_t imm_11_0 = word >> 20;
+            int signed_imm_11_0 = ((int)word) >> 20;
+            uint32_t signbit = word >> 31;
+          
+           uint32_t base = (word >> 7) & 0x1F;
             uint32_t src = (word >> 15) & 0x1F;
             int32_t immVal = (word >> 20) & 0xFFF;
 
-            if ((func3 ^ ADDI) == 0x00) {
+             if ((func3 ^ ADDI) == 0x00) {
                 reg[base] = reg[src] + immVal;
                 }
             // SLTI = set less than immediate
@@ -212,19 +255,41 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             //SLTIU = Set Less Than Immediate Unsigned
             else if ((func3 ^ SLTIU )  == 0x00){
                 reg[base] = (reg[src] < (uint32_t)immVal) ? 1:0;
+            } 
+            else if ((func3 ^ XORI) == 0x00) {
+                if (signbit == 0x00) {
+                    reg[rd] = ((uint32_t)reg[rs1]) ^ imm_11_0;
+                } else {
+                    reg[rd] = ((int)reg[rs1]) ^ signed_imm_11_0;
+                }
+            } else if ((func3 ^ ORI) == 0x00) {
+                if (signbit == 0x00) {
+                    reg[rd] = ((uint32_t)reg[rs1]) | imm_11_0;
+                } else {
+                    reg[rd] = ((int)reg[rs1]) | signed_imm_11_0;
+                }
+            } else if ((func3 ^ ANDI) == 0x00) {
+                if(signbit == 0x00) {
+                    reg[rd] = ((uint32_t)reg[rs1]) & imm_11_0;
+                } else {
+                    reg[rd] = ((int)reg[rs1]) & signed_imm_11_0;
+                }
+            } else if ((func3 ^ SLLI) == 0x00) {
+                reg[rd] = ((int)reg[rs1]) << shamt;
+            } else if ((func3 ^ SRLI_SRAI) == 0x00) {
+                if ((func7 ^ SRLI) == 0x00) {
+                    reg[rd] = ((uint32_t)reg[rs1]) >> shamt;
+                } else if ((func7 ^ SRAI) == 0x00) {
+                    if (signbit == 0x00) {
+                        reg[rd] = ((uint32_t)reg[rs1]) >> shamt;
+                    } else {
+                        reg[rd] = ((int)reg[rs1]) >> shamt;
+                    }
+                }
+            } else {
+                printf("Error occured in IMMEDIATE_INST\n");
             }
-            else if ((func3 ^ XORI) == 0x00){
-                reg[base] = reg[src] ^ immVal;
-            }
-            else if ((func3 ^ ORI) == 0x00){
-            }
-            else if ( (func3 ^ ANDI) == 0x00){
-            }
-            else if ((func3 ^ SLLI) == 0x00){
-            }
-            else
-                printf("Error - no such immediate instruktion found \n");
-                
+            
         } else if ((opcode ^ RTYPE_INST) == 0x00) {
             uint32_t func7 = word >> 25;
             uint32_t rs1 = (word << 12) >> 27;
@@ -244,11 +309,15 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                         reg[rd] = 0x00;
                     }
                 } else if ((func3 ^ SLTU) == 0x00) {
-                    //implement
+                    if (((uint32_t)reg[rs1]) < ((uint32_t)reg[rs2])) {
+                        reg[rd] = 0x00000001;
+                    } else {
+                        reg[rd] = 0x00;
+                    }
                 } else if ((func3 ^ XOR) == 0x00) {
                     reg[rd] = reg[rs1] ^ reg[rs2];
                 } else if ((func3 ^ SRL) == 0x00) {
-                    /* code */
+                    reg[rd] = reg[rs1] >> reg[rs2];
                 } else if ((func3 ^ OR) == 0x00) {
                     reg[rd] = reg[rs1] | reg[rs2];
                 } else if ((func3 ^ AND) == 0x00) {
@@ -260,8 +329,29 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             }
             //RTYPE_1 (dvs. instruktioner hvor func7 = 0x20) 
             else if((func7 ^ RTYPE_1) == 0x00) {
+                if ((func3 ^ SUB) == 0x00) {
+                    reg[rd] = reg[rs1] - reg[rs2];
+                } else if ((func3 ^ SRA) == 0x00) {
+                    uint32_t signbit = ((uint32_t)reg[rs1]) >> 31;
+                    if (signbit == 0x00) {
+                        reg[rd] = ((uint32_t)reg[rs1]) >> reg[rs2];
+                    } else if (signbit == 0x01) {
+                        reg[rd] = ((int)reg[rs1]) >> reg[rs2];
+                    } else {
+                        printf("Error occured in RTYPE_1_INSTR\n");
+                    }
+                } else {
+                    printf("Error occured in RTYPE_1_INST\n");
+                }
+                
+                
 
             } else if((func7 ^ MUL_TYPE) == 0x00) {
+                if ((func3 ^ MUL) == 0x00) {
+                    uint64_t res = (uint64_t)reg[rs2] * (uint64_t)reg[rs1];
+                    reg[rd] = res;
+                }
+                
 
             } else {
                 printf("Error occured in RTYPE_INST\n");
