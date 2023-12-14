@@ -97,6 +97,8 @@ enum ImmediateInstructions {
     SRAI = 0x20,
 };
 
+
+
 //Returnerer antallet af instruktioner, som den har udført
 long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE *log_file) {
     //ASSEMBLY-FILEN KAN BARE BRUGES TIL AT FÅ EN GIVEN ASSEMBLER-KODE UD FRA EN GIVEN ADDRESSE.
@@ -131,7 +133,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
         uint32_t opcode = (word << 25) >> 25;
         uint32_t func3 = (word << 17) >> 17;
         printf("Opcode is: 0x%08x\n",opcode);
-        
+        // obs 
         if ((opcode ^ ECALL) == 0x00) {
             if (reg[a7] == 1) {
                 reg[a0] = getchar();
