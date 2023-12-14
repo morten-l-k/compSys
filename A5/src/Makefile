@@ -7,7 +7,7 @@ riscv:
 	
 # % bruger som placeholder - dvs. en hvilken som helst fil med den endelse kan bruge dette target
 
-%.riscv: %.c Makefile
+%.riscv: %.s Makefile
 	/usr/local/opt/riscv-gnu-toolchain/bin/riscv64-unknown-elf-gcc  -march=rv32im -mabi=ilp32 -fno-tree-loop-distribute-patterns -mno-relax -O1 $< -static -nostartfiles -nostdlib -o $@
 
 #### DENNE KOMMANDO HERUNDER KAN BRUGES TIL AT LAVE EN ASSEMBLY FIL OM TIL EN .DIS FIL. DET KAN VI BRUGE NÅR VI SKAL TESTE VORES
