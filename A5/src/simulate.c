@@ -88,6 +88,8 @@ enum ImmediateInstructions {
     SRAI = 0x20,
 };
 
+
+
 //Returnerer antallet af instruktioner, som den har udført
 long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE *log_file) {
     program_counter = start_addr;
@@ -114,6 +116,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
         uint32_t opcode = (word << 25) >> 25;
         uint32_t func3 = (word << 17) >> 29;
         printf("Opcode is: 0x%08x\n",opcode);
+
         printf("Func3 is: 0x%08x\n",func3);
         
         if ((opcode ^ ECALL) == 0x00) {
