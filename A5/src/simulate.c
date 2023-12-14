@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//TODO: IMPLEMENT PROGRAM COUNTER: program_counter = 0;
+int program_counter = 0;
 
 //DEFINING ENUM OPCODE
 enum Opcode {
@@ -45,21 +45,12 @@ enum StoreInstructions {
     SW = 0x02,
 };
 
-enum ImmediateInstructions {
-    ADDI = 0x00,
-    SLTI = 0x02,
-    SLTIU = 0x03,
-    XORI = 0x04,
-    ORI = 0x06,
-    ANDI = 0x07,
-    SLLI = 0x01,
-};
 
 enum RtypeInstructions {
     //Func7 bit sequences
     RTYPE_0 = 0x00,
     RTYPE_1 = 0x20, //Includes SUB, SRA. Thus RTYPE_1 has value 0x02 in func7
-    MUL_TYPE = 0x01,
+    MUL_TYPE = 0x01, //Includes MUL and DIV instructions
     //Func3 bit sequences of RTYPE_0 and RTYPE_1
     ADD = 0x00, 
     SUB = 0x00,//Note: SUB is RTYPE_1
@@ -99,38 +90,31 @@ enum ImmediateInstructions {
 
 //Returnerer antallet af instruktioner, som den har udført
 long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE *log_file) {
-    //ASSEMBLY-FILEN KAN BARE BRUGES TIL AT FÅ EN GIVEN ASSEMBLER-KODE UD FRA EN GIVEN ADDRESSE.
-    //SÅ DVS. DET ER BARE EN NEMMERE MÅDE AT FÅ ASSEMBLE PÅ
-    //TODO: IMPLEMENT PROGRAM COUNTER: program_counter = start_addr;
+    program_counter = start_addr;
+
     int reg[REG_SIZE]; //TODO: Beslut om register skal være af uint32_t typer i stedet
     const int hard_wired_zero = 0;
     reg[zero] = hard_wired_zero;
 
-    //Vi skal ikke ændre i memory.c, read_exec.c eller anden. Kun her i simulate!
-
-    //Så dvs. vores C-simulator skal altså kunne håndtere de instruktioner, som vi får givet, 
-    //således at den korrekte brug af read/write til fx memory håndteres korrekt. 
-
-    //C programmet skal kunne læse en række værdier fra lageret - vi får et tal, og så skal vi 
-    //fortolke det tal til en given instruktion, som så (muligvis) vil tage noget data fra en given
-    //addresse i memory.
-
-    //read_exec leder efter _GLOBAL_START for at finde hvor den skal begynde at læse fra. Men den læser
-    //ikke assembly kommandoer, men loader bare værdierne fra en .dis fil ind i memory. Det er kun det, 
-    //den gør.
-
-    //Ved test af vores egen kode, så lav simple assebmly programmer på få linjer til at teste en eller få instruktioner
+    //For loop used for testing. Seting all values in register to zero, before executing instructions.
+    for (size_t i = 0; i < REG_SIZE; i++)
+    {
+        reg[i] = 0;
+        printf("Value %ld is: %d\n",i,reg[i]);
+    } 
     
     for (int i = start_addr; i <= start_addr + 0x10; i += 4) {
-        //FETCH INSTRUCTION (1/5)
+        
+        //FETCH INSTRUCTION (1/2)
         int inst_word = memory_rd_w(mem,i);
 
-        //DECOMPOSE INSTRUCTION(2/5)
+        //HANDLE INSTRUCTION(2/2)
         uint32_t word = (uint32_t) inst_word;
         printf("Decomposed value is: 0x%08x\n",word);
         uint32_t opcode = (word << 25) >> 25;
-        uint32_t func3 = (word << 17) >> 17;
+        uint32_t func3 = (word << 17) >> 29;
         printf("Opcode is: 0x%08x\n",opcode);
+        printf("Func3 is: 0x%08x\n",func3);
         
         if ((opcode ^ ECALL) == 0x00) {
             if (reg[a7] == 1) {
@@ -153,34 +137,38 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
         } else if ((opcode ^ BRANCH_INST) == 0x00) {
             uint32_t imm_1_4 = (((word << 20) >> 28) << 1);
             uint32_t imm_5_10 = (((word << 1) >> 26) << 5);
-            uint32_t imm_11 = (((word << 24) >> 31) << 10);
-            uint32_t tmp_offset = imm_1_4 + imm_5_10 + imm_11;
-            uint32_t signbit = word >> 31;
-            uint32_t total_offset = 0x00000000;
-            //Padding leftmost bits if signbit is negative
-            if (signbit == 0x01) {
-                total_offset = 0xfffff000 + tmp_offset; 
-            } else {
-                total_offset = tmp_offset;
-            }
+            uint32_t imm_11 = (((word << 24) >> 31) << 11);
+            uint32_t tmp_offset = ((imm_1_4 | imm_5_10) | imm_11);
+            uint32_t signbit = (((int)word) >> 31) << 12;
+            int total_offset = signbit | tmp_offset;
             
             uint32_t rs1 = (word << 12) >> 27;
             uint32_t rs2 = (word << 7) >> 27;
 
             if((func3 ^ BEQ) == 0x00){
                 if (reg[rs1] == reg[rs2]) {
-                    //PC + total_offset
+                    program_counter += total_offset;
                 }
             } else if((func3 ^ BNE) == 0x00) {
-                //call BNE
+                if (reg[rs1] != reg[rs2]) {
+                    program_counter += total_offset;
+                }
             } else if((func3 ^ BLT) == 0x00) {
-                //call BLT
+                if (reg[rs1] < reg[rs2]) {
+                    program_counter += total_offset;
+                }
             } else if((func3 ^ BGE) == 0x00) {
-                //call BGE
+                if (reg[rs1] >= reg[rs2]) {
+                    program_counter += total_offset;
+                }
             } else if((func3 ^ BLTU) == 0x00) {
-                //call BLTU
+                if (((uint32_t)reg[rs1]) < ((uint32_t)reg[rs2])) {
+                    program_counter += total_offset;
+                }
             } else if((func3 ^ BGEU) == 0x00) {
-                //call BGEU
+                if (((uint32_t)reg[rs1]) >= ((uint32_t)reg[rs2])) {
+                    program_counter += total_offset;
+                }
             } else {
                 printf("ERROR OCCURED - no such BRANCH instr. was found \n");
             }
@@ -241,7 +229,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             int signed_imm_11_0 = ((int)word) >> 20;
             uint32_t signbit = word >> 31;
           
-           uint32_t base = (word >> 7) & 0x1F;
+            uint32_t base = (word >> 7) & 0x1F;
             uint32_t src = (word >> 15) & 0x1F;
             int32_t immVal = (word >> 20) & 0xFFF;
 
@@ -321,11 +309,11 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 } else if ((func3 ^ OR) == 0x00) {
                     reg[rd] = reg[rs1] | reg[rs2];
                 } else if ((func3 ^ AND) == 0x00) {
+                    printf("IN AND\n");
                     reg[rd] = reg[rs1] & reg[rs2];
                 } else {
                     printf("Error in IMMEDIATE_RTYP0 instructions\n");
                 }
-                
             }
             //RTYPE_1 (dvs. instruktioner hvor func7 = 0x20) 
             else if((func7 ^ RTYPE_1) == 0x00) {
@@ -363,13 +351,5 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
         } else {
             printf("ERROR OCCURED in RTYPE\n");
         }
-
-        //EXECUTE (3/5)
-
-
-        //MEMORY (4/5) 
-
-
-        //WRITEBACK (5/5)
     }
 }

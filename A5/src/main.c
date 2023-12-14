@@ -68,9 +68,7 @@ int main(int argc, char *argv[])
       }
     }
 
-    //log-filen er basically bare en fil som bruges til at vi kan læse noget ind i den
-    printf("Entering read_exec()\n");
-    int start_addr = read_exec(mem, as, argv[1], log_file); //Her loader read_exec vores fil ind i memory
+    int start_addr = read_exec(mem, as, argv[1], log_file);
     clock_t before = clock();
     long int num_insns = simulate(mem, as, start_addr, log_file);
     clock_t after = clock();
