@@ -99,27 +99,22 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
     reg[zero] = hard_wired_zero;
 
     //For loop used for testing. Seting all values in register to zero, before executing instructions.
+    printf("INITIAL VALUES:\n");
     for (size_t i = 0; i < REG_SIZE; i++)
     {
         reg[i] = 0;
         printf("Value %ld is: %d\n",i,reg[i]);
     } 
-    
-    //gammelt for loop
-    /* for (int i = start_addr; i <= start_addr + 0x10; i += 4) { */
 
-    while (1){    
+
+    while (1) {    
         //FETCH INSTRUCTION (1/2)
         int inst_word = memory_rd_w(mem, program_counter);
 
         //HANDLE INSTRUCTION(2/2)
         uint32_t word = (uint32_t) inst_word;
-        printf("Decomposed value is: 0x%08x\n",word);
         uint32_t opcode = (word << 25) >> 25;
         uint32_t func3 = (word << 17) >> 29;
-        printf("Opcode is: 0x%08x\n",opcode);
-
-        printf("Func3 is: 0x%08x\n",func3);
         
         if ((opcode ^ ECALL) == 0x00) {
             if (reg[a7] == 1) {
@@ -130,9 +125,11 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 putchar(reg[a0]);
                 program_counter += 4; 
             } else if (reg[a7] == 3 || reg[a7] == 93){
+                break; //ONLY USED FOR TESTING
                 printf("About to exit_Failure\n");
                 return EXIT_FAILURE;
             }
+            break; //ONLY USED FOR TESTING
             
         } else if((opcode ^ LUI) == 0x00) {
             uint32_t rd = ((word << 20) >> 27);
@@ -140,7 +137,6 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
 
             reg[rd] = imm; 
             program_counter += 4;
-
 
         } else if ((opcode ^ AUIPC) == 0x00) {
             uint32_t rd = ((word << 20) >> 27);
@@ -272,22 +268,22 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             int signed_imm_11_0 = ((int)word) >> 20;
             uint32_t signbit = word >> 31;
           
-            uint32_t base = (word >> 7) & 0x1F;
-            uint32_t src = (word >> 15) & 0x1F;
-            int32_t immVal = (word >> 20) & 0xFFF;
+            // uint32_t base = (word >> 7) & 0x1F;
+            // uint32_t src = (word >> 15) & 0x1F;
+            // int32_t immVal = (word >> 20) & 0xFFF;
 
              if ((func3 ^ ADDI) == 0x00) {
-                reg[base] = reg[src] + immVal;
+                reg[rd] = reg[rs1] + signed_imm_11_0;
                 program_counter += 4;
                 }
             // SLTI = set less than immediate
             else if ((func3 ^ SLTI) == 0x00) {
-                reg[base] = (reg[src] < immVal) ? 1:0;
+                reg[rd] = (reg[rs1] < signed_imm_11_0) ? 1:0;
                 program_counter += 4;
             }
             //SLTIU = Set Less Than Immediate Unsigned
             else if ((func3 ^ SLTIU )  == 0x00){
-                reg[base] = (reg[src] < (uint32_t)immVal) ? 1:0;
+                reg[rd] = ((uint32_t)reg[rs1] < (uint32_t)signed_imm_11_0) ? 1:0;
                 program_counter += 4;
             } 
             else if ((func3 ^ XORI) == 0x00) {
@@ -299,7 +295,6 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                     program_counter += 4;
                 }
             } else if ((func3 ^ ORI) == 0x00) {
-                printf("ORI \n");
                 if (signbit == 0x00) {
                     reg[rd] = ((uint32_t)reg[rs1]) | imm_11_0;
                     program_counter += 4;
@@ -345,7 +340,6 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             //RTYPE_0 (i.e. instructions where func7 = 0x00)
             if ((func7 ^ RTYPE_0) == 0x00) {
                 if ((func3 ^ ADD) == 0x00) {
-                    printf("ADD \n");
                     reg[rd] = reg[rs1] + reg[rs2];
                     program_counter += 4;
                 } else if ((func3 ^ SLL) == 0x00) {
@@ -374,17 +368,12 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                     reg[rd] = reg[rs1] >> reg[rs2];
                     program_counter += 4;
                 } else if ((func3 ^ OR) == 0x00) {
-                    printf("OR \n");
                     reg[rd] = reg[rs1] | reg[rs2];
                     program_counter += 4;
                 } else if ((func3 ^ AND) == 0x00) {
-                    printf("IN AND\n");
                     reg[rd] = reg[rs1] & reg[rs2];
                     program_counter += 4;
                 } else {
-                    printf("Func7 is: 0x%08x\n",func7);
-                    printf("Func3 is: 0x%08x\n",func3);
-                    printf("Opcode is: 0x%08x\n",opcode);
                     printf("Error in IMMEDIATE_RTYP0 instructions\n");
                     return EXIT_FAILURE;
                 }
@@ -415,27 +404,31 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
 
             } else if((func7 ^ MUL_TYPE) == 0x00) {
                 if ((func3 ^ MUL) == 0x00) {
-                    uint64_t res = (uint64_t)reg[rs2] * (uint64_t)reg[rs1];
-                    reg[rd] = res;
+                    int64_t res = (int64_t)reg[rs2] * (int64_t)reg[rs1];
+                    reg[rd] = (int)res;
                     program_counter += 4; 
 
                 }
                 else if ((func3 ^ MULH) == 0x00) {
-                    int32_t res = (uint32_t)((int32_t)reg[rs1] * (int32_t)reg[rs2]) >> 32;
+                    int res = (int)(((int64_t)reg[rs1] * (int64_t)reg[rs2]) >> 32);
                     reg[rd] = res;
+                    program_counter += 4; 
                 }
                 else if ((func3 ^ MULHSU) == 0x00) {
-                    int32_t res = (int32_t)((int32_t)reg[rs1] * (uint32_t)reg[rs2]) >> 32;
+                    int res = (int)(((int64_t)reg[rs1] * (uint64_t)reg[rs2]) >> 32);
                     reg[rd] = res;
+                    program_counter += 4; 
                 }
                 else if ((func3 ^ MULHU) == 0x00) {
-                    uint32_t res = (uint32_t)((uint32_t)reg[rs1] * (uint32_t)reg[rs2]) >> 32;
+                    int res = (int)(((uint64_t)reg[rs1] * (uint64_t)reg[rs2]) >> 32);
                     reg[rd] = res;
+                    program_counter += 4; 
                 }
                 else if ((func3 ^ DIV) == 0x00) {
                     if (reg[rs1] != 0 && reg[rs2] != 0) {
-                        int32_t res = ((int32_t)reg[rs2])/((int32_t)reg[rs1]);
+                        int32_t res = ((int32_t)reg[rs1])/((int32_t)reg[rs2]);
                         reg[rd] = res;
+                        program_counter += 4; 
                     }
                     else {
                         printf("Error dividing by zero");
@@ -443,8 +436,9 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 }
                 else if ((func3 ^ DIVU) == 0x00) {
                     if (reg[rs1] != 0 && reg[rs2] != 0) {
-                        uint32_t res = ((uint32_t)reg[rs2])/((uint32_t)reg[rs1]);
+                        uint32_t res = ((uint32_t)reg[rs1])/((uint32_t)reg[rs2]);
                         reg[rd] = res;
+                        program_counter += 4; 
                     }
                     else {
                         printf("Error dividing by zero");
@@ -453,10 +447,12 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 else if ((func3 ^ REM) == 0x00) {
                     int32_t remainder = (int32_t)reg[rs1] % (int32_t)reg[rs2];
                     reg[rd] = remainder;
+                    program_counter += 4; 
                 }
                 else if ((func3 ^ REMU) == 0x00) {
                     uint32_t remainder = (uint32_t)reg[rs1] % (uint32_t)reg[rs2];
                     reg[rd] = remainder;
+                    program_counter += 4; 
                 }
                 else {
                 printf("Error occured in MUL_TYPE\n");
@@ -466,12 +462,17 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 return EXIT_FAILURE;
             }
             
-
-
-            /* code */
         } else {
             printf("ERROR OCCURED - no such opcode \n");
             return EXIT_FAILURE;
         }
     }
+
+    printf("POST VALUES:\n");
+
+    for (size_t i = 0; i < REG_SIZE; i++)
+    {
+        printf("Value %ld is: %d\n",i,reg[i]);
+    } 
+
 }

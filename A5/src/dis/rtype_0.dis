@@ -1,0 +1,37 @@
+
+rtype_0.riscv:     file format elf32-littleriscv
+
+Contents of section .text:
+ 10074 93012000 13825100 b3824100 1303c0f9  .. ...Q...A.....
+ 10084 b3034340 33143200 b3243300 33354300  ..C@3.2..$3.35C.
+ 10094 93052000 33c63500 93068000 33d73600  .. .3.5.....3.6.
+ 100a4 b3573340 33e8d100 b3f8d100 93683000  .W3@3........h0.
+ 100b4 73000000                             s...            
+Contents of section .riscv.attributes:
+ 0000 41270000 00726973 63760001 1d000000  A'...riscv......
+ 0010 05727633 32693270 315f6d32 70305f7a  .rv32i2p1_m2p0_z
+ 0020 6d6d756c 31703000                    mmul1p0.        
+
+rtype_0.riscv:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00010074 <_start>:
+   10074:	00200193          	li	gp,2
+   10078:	00518213          	add	tp,gp,5 # 118bd <__global_pointer$+0x5>
+   1007c:	004182b3          	add	t0,gp,tp
+   10080:	f9c00313          	li	t1,-100
+   10084:	404303b3          	sub	t2,t1,tp
+   10088:	00321433          	sll	s0,tp,gp
+   1008c:	003324b3          	slt	s1,t1,gp
+   10090:	00433533          	sltu	a0,t1,tp
+   10094:	00200593          	li	a1,2
+   10098:	0035c633          	xor	a2,a1,gp
+   1009c:	00800693          	li	a3,8
+   100a0:	0036d733          	srl	a4,a3,gp
+   100a4:	403357b3          	sra	a5,t1,gp
+   100a8:	00d1e833          	or	a6,gp,a3
+   100ac:	00d1f8b3          	and	a7,gp,a3
+   100b0:	00306893          	or	a7,zero,3
+   100b4:	00000073          	ecall
