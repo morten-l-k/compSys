@@ -287,7 +287,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             uint32_t rs2 = (word << 7) >> 27;
             uint32_t rd = (word << 20) >> 27;
 
-            //RTYPE_0 (dvs. instruktioner hvor func7 = 0x00)
+            //RTYPE_0 (i.e. instructions where func7 = 0x00)
             if ((func7 ^ RTYPE_0) == 0x00) {
                 if (func3 ^ ADD) {
                     reg[rd] = reg[rs1] + reg[rs2];
