@@ -2,9 +2,9 @@
 immediate_inst.riscv:     file format elf32-littleriscv
 
 Contents of section .text:
- 10074 93014000 13a25100 93421200 13e31200  ..@...Q..B......
- 10084 93f34100 13941100 93b43100 13d51100  ..A.......1.....
- 10094 93d52140 93683000 73000000           ..!@.h0.s...    
+ 10074 93010019 13862103 1322461f 93421200  ......!.."F..B..
+ 10084 13e31200 93f34100 13941100 93b43100  ......A.......1.
+ 10094 13d51100 93d52140 93683000 73000000  ......!@.h0.s...
 Contents of section .riscv.attributes:
  0000 41270000 00726973 63760001 1d000000  A'...riscv......
  0010 05727633 32693270 315f6d32 70305f7a  .rv32i2p1_m2p0_z
@@ -16,14 +16,15 @@ immediate_inst.riscv:     file format elf32-littleriscv
 Disassembly of section .text:
 
 00010074 <_start>:
-   10074:	00400193          	li	gp,4
-   10078:	0051a213          	slti	tp,gp,5
-   1007c:	00124293          	xor	t0,tp,1
-   10080:	0012e313          	or	t1,t0,1
-   10084:	0041f393          	and	t2,gp,4
-   10088:	00119413          	sll	s0,gp,0x1
-   1008c:	0031b493          	sltiu	s1,gp,3
-   10090:	0011d513          	srl	a0,gp,0x1
-   10094:	4021d593          	sra	a1,gp,0x2
-   10098:	00306893          	or	a7,zero,3
-   1009c:	00000073          	ecall
+   10074:	19000193          	li	gp,400
+   10078:	03218613          	add	a2,gp,50 # 118d6 <__global_pointer$+0x32>
+   1007c:	1f462213          	slti	tp,a2,500
+   10080:	00124293          	xor	t0,tp,1
+   10084:	0012e313          	or	t1,t0,1
+   10088:	0041f393          	and	t2,gp,4
+   1008c:	00119413          	sll	s0,gp,0x1
+   10090:	0031b493          	sltiu	s1,gp,3
+   10094:	0011d513          	srl	a0,gp,0x1
+   10098:	4021d593          	sra	a1,gp,0x2
+   1009c:	00306893          	or	a7,zero,3
+   100a0:	00000073          	ecall

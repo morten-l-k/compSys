@@ -1,0 +1,35 @@
+
+mul_inst.riscv:     file format elf32-littleriscv
+
+Contents of section .text:
+ 10074 93012000 13825100 b3023202 33934202  .. ...Q...2.3.B.
+ 10084 9303e0fc 33a44302 b3344302 1305a000  ....3.C..4C.....
+ 10094 b3453502 33563502 9306f000 13073000  .E5.3V5.......0.
+ 100a4 b3e7e602 33f8e602 93683000 73000000  ....3....h0.s...
+Contents of section .riscv.attributes:
+ 0000 41270000 00726973 63760001 1d000000  A'...riscv......
+ 0010 05727633 32693270 315f6d32 70305f7a  .rv32i2p1_m2p0_z
+ 0020 6d6d756c 31703000                    mmul1p0.        
+
+mul_inst.riscv:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00010074 <_start>:
+   10074:	00200193          	li	gp,2
+   10078:	00518213          	add	tp,gp,5 # 118b9 <__global_pointer$+0x5>
+   1007c:	023202b3          	mul	t0,tp,gp
+   10080:	02429333          	mulh	t1,t0,tp
+   10084:	fce00393          	li	t2,-50
+   10088:	0243a433          	mulhsu	s0,t2,tp
+   1008c:	024334b3          	mulhu	s1,t1,tp
+   10090:	00a00513          	li	a0,10
+   10094:	023545b3          	div	a1,a0,gp
+   10098:	02355633          	divu	a2,a0,gp
+   1009c:	00f00693          	li	a3,15
+   100a0:	00300713          	li	a4,3
+   100a4:	02e6e7b3          	rem	a5,a3,a4
+   100a8:	02e6f833          	remu	a6,a3,a4
+   100ac:	00306893          	or	a7,zero,3
+   100b0:	00000073          	ecall
