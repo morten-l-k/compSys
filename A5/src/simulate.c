@@ -45,15 +45,6 @@ enum StoreInstructions {
     SW = 0x02,
 };
 
-enum ImmediateInstructions {
-    ADDI = 0x00,
-    SLTI = 0x02,
-    SLTIU = 0x03,
-    XORI = 0x04,
-    ORI = 0x06,
-    ANDI = 0x07,
-    SLLI = 0x01,
-};
 
 enum RtypeInstructions {
     //Func7 bit sequences
@@ -95,17 +86,6 @@ enum ImmediateInstructions {
     //Func7
     SRLI = 0x00,
     SRAI = 0x20,
-};
-
-enum MulInstructions {
-    MUL = 0x00,
-    MULH = 0x01,
-    MULHSU = 0x02,
-    MULHU = 0x03,
-    DIV = 0x04,
-    DIVU = 0x05,
-    REM = 0x06,
-    REMU = 0x07,
 };
 
 //Returnerer antallet af instruktioner, som den har udført
@@ -363,44 +343,53 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                     reg[rd] = res;
                 }
                 //Multiply High
-                else if (func3 ^ MULH == 0x00) {
-                    int64_t res = (uint64_t)((int64_t)reg[rs1] * (int64_t)reg[rs2]) >> 32;
+                else if ((func3 ^ MULH) == 0x00) {
+                    int32_t res = (uint32_t)((int32_t)reg[rs1] * (int32_t)reg[rs2]) >> 32;
                     reg[rd] = res;
                 }
                 //Multiply High Signed/Unsigned
-                else if (func3 ^ MULHSU) {
-                    int64_t res = (int64_t)((int64_t)reg[rs1] * (uint64_t)reg[rs2]) >> 32;
+                else if ((func3 ^ MULHSU) == 0x00) {
+                    int32_t res = (int32_t)((int32_t)reg[rs1] * (uint32_t)reg[rs2]) >> 32;
                     reg[rd] = res;
                 }
                 //Multiply High Unsigned
-                else if (func3 ^ MULHU) {
-                    int64_t res = (uint64_t)((uint64_t)reg[rs1] * (uint64_t)reg[rs2]) >> 32;
+                else if ((func3 ^ MULHU) == 0x00) {
+                    uint32_t res = (uint32_t)((uint32_t)reg[rs1] * (uint32_t)reg[rs2]) >> 32;
                     reg[rd] = res;
                 }
                 //Divide 
-                else if (func3 ^ DIV) {
-                    /* code */
+                else if ((func3 ^ DIV) == 0x00) {
+                    if (reg[rs1] != 0 && reg[rs2] != 0) {
+                        int32_t res = ((int32_t)reg[rs2])/((int32_t)reg[rs1]);
+                        reg[rd] = res;
+                    }
+                    else {
+                        printf("Error dividing by zero");
+                    }
                 }
                 //Divide Unsigned
-                else if (func3 ^ DIVU) {
-                    /* code */
+                else if ((func3 ^ DIVU) == 0x00) {
+                    if (reg[rs1] != 0 && reg[rs2] != 0) {
+                        uint32_t res = ((uint32_t)reg[rs2])/((uint32_t)reg[rs1]);
+                        reg[rd] = res;
+                    }
+                    else {
+                        printf("Error dividing by zero");
+                    }
                 }
                 //Remainder
-                else if (func3 ^ REM) {
-                    /* code */
+                else if ((func3 ^ REM) == 0x00) {
+                    int32_t remainder = (int32_t)reg[rs1] % (int32_t)reg[rs2];
+                    reg[rd] = remainder;
                 }
                 //Remainder Unsigned
-                else if (func3 ^ REMU) {
-                    /* code */
+                else if ((func3 ^ REMU) == 0x00) {
+                    uint32_t remainder = (uint32_t)reg[rs1] % (uint32_t)reg[rs2];
+                    reg[rd] = remainder;
                 }
                 else {
                 printf("Error occured in MUL_TYPE\n");
-                }
-                
-                
-                
-                
-
+                }  
             } else {
                 printf("Error occured in RTYPE_INST\n");
             }
