@@ -5,8 +5,13 @@ sim-x64-macOS
 #Ignore dSYM
 sim.dSYM
 
-#Ignore files
-*.dis
+#Ignore specific .dis files
+fib.dis
+opgave.dis
+t.dis
+test.dis
+
+#ignore files
 *.riscv
 *.s
 t.c
