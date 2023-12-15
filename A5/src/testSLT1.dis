@@ -1,0 +1,27 @@
+
+testSLT1.riscv:     file format elf32-littleriscv
+
+Contents of section .text:
+ 10074 1305f0ff 93052000 33a6a500 93682000  ...... .3....h .
+ 10084 73000000 93681000 73000000 93683000  s....h..s....h0.
+ 10094 73000000                             s...            
+Contents of section .riscv.attributes:
+ 0000 41270000 00726973 63760001 1d000000  A'...riscv......
+ 0010 05727633 32693270 315f6d32 70305f7a  .rv32i2p1_m2p0_z
+ 0020 6d6d756c 31703000                    mmul1p0.        
+
+testSLT1.riscv:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00010074 <_start>:
+   10074:	fff00513          	li	a0,-1
+   10078:	00200593          	li	a1,2
+   1007c:	00a5a633          	slt	a2,a1,a0
+   10080:	00206893          	or	a7,zero,2
+   10084:	00000073          	ecall
+   10088:	00106893          	or	a7,zero,1
+   1008c:	00000073          	ecall
+   10090:	00306893          	or	a7,zero,3
+   10094:	00000073          	ecall
