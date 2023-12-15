@@ -342,22 +342,18 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                     uint64_t res = (uint64_t)reg[rs2] * (uint64_t)reg[rs1];
                     reg[rd] = res;
                 }
-                //Multiply High
                 else if ((func3 ^ MULH) == 0x00) {
                     int32_t res = (uint32_t)((int32_t)reg[rs1] * (int32_t)reg[rs2]) >> 32;
                     reg[rd] = res;
                 }
-                //Multiply High Signed/Unsigned
                 else if ((func3 ^ MULHSU) == 0x00) {
                     int32_t res = (int32_t)((int32_t)reg[rs1] * (uint32_t)reg[rs2]) >> 32;
                     reg[rd] = res;
                 }
-                //Multiply High Unsigned
                 else if ((func3 ^ MULHU) == 0x00) {
                     uint32_t res = (uint32_t)((uint32_t)reg[rs1] * (uint32_t)reg[rs2]) >> 32;
                     reg[rd] = res;
                 }
-                //Divide 
                 else if ((func3 ^ DIV) == 0x00) {
                     if (reg[rs1] != 0 && reg[rs2] != 0) {
                         int32_t res = ((int32_t)reg[rs2])/((int32_t)reg[rs1]);
@@ -367,7 +363,6 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                         printf("Error dividing by zero");
                     }
                 }
-                //Divide Unsigned
                 else if ((func3 ^ DIVU) == 0x00) {
                     if (reg[rs1] != 0 && reg[rs2] != 0) {
                         uint32_t res = ((uint32_t)reg[rs2])/((uint32_t)reg[rs1]);
@@ -377,12 +372,10 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                         printf("Error dividing by zero");
                     }
                 }
-                //Remainder
                 else if ((func3 ^ REM) == 0x00) {
                     int32_t remainder = (int32_t)reg[rs1] % (int32_t)reg[rs2];
                     reg[rd] = remainder;
                 }
-                //Remainder Unsigned
                 else if ((func3 ^ REMU) == 0x00) {
                     uint32_t remainder = (uint32_t)reg[rs1] % (uint32_t)reg[rs2];
                     reg[rd] = remainder;
