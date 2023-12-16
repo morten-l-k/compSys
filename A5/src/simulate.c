@@ -88,13 +88,10 @@ enum ImmediateInstructions {
     SRAI = 0x20,
 };
 
-
-
-//Returnerer antallet af instruktioner, som den har udført
 long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE *log_file) {
     program_counter = start_addr;
 
-    int reg[REG_SIZE]; //TODO: Beslut om register skal være af uint32_t typer i stedet
+    int reg[REG_SIZE];
     const int hard_wired_zero = 0;
     reg[zero] = hard_wired_zero;
 
@@ -245,11 +242,9 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             uint32_t total_offset = offset_0_4 + offset_5_11;
 
             if ((func3 ^ SB) == 0x00) {
-                //UKLART OM MEMORY_WR_H SELV HÅNDTERER KUN AT GEMME EN BYTE
                 memory_wr_b(mem,reg[base] + total_offset, reg[src]);
                 program_counter += 4;
             } else if ((func3 ^ SH) == 0x00) {
-                //UKLART OM MEMORY_WR_H SELV HÅNDTERER KUN AT GEMME ET HALF-WORD
                 memory_wr_h(mem,reg[base] + total_offset,reg[src]);
                 program_counter += 4;
             } else if ((func3 ^ SW) == 0x00) {
@@ -267,10 +262,6 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             uint32_t imm_11_0 = word >> 20;
             int signed_imm_11_0 = ((int)word) >> 20;
             uint32_t signbit = word >> 31;
-          
-            // uint32_t base = (word >> 7) & 0x1F;
-            // uint32_t src = (word >> 15) & 0x1F;
-            // int32_t immVal = (word >> 20) & 0xFFF;
 
              if ((func3 ^ ADDI) == 0x00) {
                 reg[rd] = reg[rs1] + signed_imm_11_0;
