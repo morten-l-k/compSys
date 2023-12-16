@@ -95,15 +95,6 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
     const int hard_wired_zero = 0;
     reg[zero] = hard_wired_zero;
 
-    //For loop used for testing. Seting all values in register to zero, before executing instructions.
-    printf("INITIAL VALUES:\n");
-    for (size_t i = 0; i < REG_SIZE; i++)
-    {
-        reg[i] = 0;
-        printf("Value %ld is: %d\n",i,reg[i]);
-    } 
-
-
     while (1) {    
         //FETCH INSTRUCTION (1/2)
         int inst_word = memory_rd_w(mem, program_counter);
@@ -115,18 +106,14 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
         
         if ((opcode ^ ECALL) == 0x00) {
             if (reg[a7] == 1) {
-                printf("HERE ECALL \n");
                 reg[a0] = getchar();
                 program_counter += 4;
             } else if (reg[a7] == 2) {
                 putchar(reg[a0]);
                 program_counter += 4; 
             } else if (reg[a7] == 3 || reg[a7] == 93){
-                break; //ONLY USED FOR TESTING
-                printf("About to exit_Failure\n");
                 return EXIT_FAILURE;
             }
-            break; //ONLY USED FOR TESTING
             
         } else if((opcode ^ LUI) == 0x00) {
             uint32_t rd = ((word << 20) >> 27);
@@ -202,7 +189,6 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             }
 
         } else if ((opcode ^ LOAD_INST) == 0x00) {
-            // TJEK OP PÅ BITSHIFTENE HER OG HVORVIDT DE FORSKELLIGE DELE ER SIGN EXTENDED ELLER EJ
             uint32_t base = (word << 12) >> 27;
             uint32_t rd = (word << 20) >> 27;
             int32_t offset = word >> 20;
@@ -267,12 +253,10 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 reg[rd] = reg[rs1] + signed_imm_11_0;
                 program_counter += 4;
                 }
-            // SLTI = set less than immediate
             else if ((func3 ^ SLTI) == 0x00) {
                 reg[rd] = (reg[rs1] < signed_imm_11_0) ? 1:0;
                 program_counter += 4;
             }
-            //SLTIU = Set Less Than Immediate Unsigned
             else if ((func3 ^ SLTIU )  == 0x00){
                 reg[rd] = ((uint32_t)reg[rs1] < (uint32_t)signed_imm_11_0) ? 1:0;
                 program_counter += 4;
@@ -458,12 +442,4 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             return EXIT_FAILURE;
         }
     }
-
-    printf("POST VALUES:\n");
-
-    for (size_t i = 0; i < REG_SIZE; i++)
-    {
-        printf("Value %ld is: %d\n",i,reg[i]);
-    } 
-
 }
