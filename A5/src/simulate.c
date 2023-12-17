@@ -112,24 +112,19 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 putchar(reg[a0]);
                 program_counter += 4; 
             } else if (reg[a7] == 3 || reg[a7] == 93){
-                return EXIT_FAILURE;
+                long int num_of_instructions = ((program_counter - start_addr)/4) + 1;
+                return num_of_instructions;
             }
             
         } else if((opcode ^ LUI) == 0x00) {
             uint32_t rd = ((word << 20) >> 27);
             uint32_t imm = ((word >> 12) << 12);
-            printf("LUI \n");
-            printf("LUI rd: %u \n", rd);
             reg[rd] = imm; 
             program_counter += 4;
 
         } else if ((opcode ^ AUIPC) == 0x00) {
-            printf("pc at AUIPC: %u \n", program_counter);
             uint32_t rd = ((word << 20) >> 27);
-            printf("rd: %u \n", rd);
-            printf("word at AUIPC: %u \n", word);
             uint32_t imm = ((word >> 12) << 12);
-            printf("AUIPC \n");
             reg[rd] = program_counter + imm;
             program_counter += 4; 
 
@@ -146,17 +141,11 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             program_counter = total_offset;   
 
         } else if ((opcode ^ JALR) == 0x00) {
-            printf("ra before JALR: %u \n", reg[1]); 
-            printf("WORD AT JALR: %u \n", word);
             uint32_t rd = ((word << 20) >> 27);
-            printf("RD: %u \n", rd);
             uint32_t rs1 = ((word << 12) >> 27);
-            printf("rs1: %u \n", rs1);
             uint32_t imm = (((int32_t)word) >> 20);
-            printf("imm: %u \n", imm);
             uint32_t total_offset = imm + rs1;
             reg[rd] = program_counter + 4; 
-            printf("total_offset: %u \n", total_offset);
             program_counter = total_offset;
 
         } else if ((opcode ^ BRANCH_INST) == 0x00) {
@@ -196,6 +185,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 }
             } else {
                 printf("ERROR OCCURED - no such BRANCH instr. was found \n");
+                return EXIT_FAILURE;
             }
 
         } else if ((opcode ^ LOAD_INST) == 0x00) {
@@ -228,6 +218,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 program_counter += 4;
             } else {
                 printf("ERROR OCCURED - no such LOAD instr. was found \n");
+                return EXIT_FAILURE;
             }
 
         } else if ((opcode ^ STORE_INST) == 0x00) {
@@ -248,6 +239,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                 program_counter += 4;
             } else {
                 printf("Error occured in STORE_INST\n");
+                return EXIT_FAILURE;
             }
             
         } else if ((opcode ^ IMMEDIATE_INST) == 0x00) {
@@ -417,6 +409,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                     }
                     else {
                         printf("Error dividing by zero");
+                        return EXIT_FAILURE;
                     }
                 }
                 else if ((func3 ^ DIVU) == 0x00) {
@@ -427,6 +420,7 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                     }
                     else {
                         printf("Error dividing by zero");
+                        return EXIT_FAILURE;
                     }
                 }
                 else if ((func3 ^ REM) == 0x00) {
@@ -440,7 +434,8 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
                     program_counter += 4; 
                 }
                 else {
-                printf("Error occured in MUL_TYPE\n");
+                    printf("Error occured in MUL_TYPE\n");
+                    return EXIT_FAILURE;
                 }  
             } else {
                 printf("Error occured in RTYPE_INST\n");
