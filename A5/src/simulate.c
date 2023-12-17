@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int program_counter = 0;
+uint32_t program_counter = 0;
 
 //DEFINING ENUM OPCODE
 enum Opcode {
@@ -103,8 +103,11 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
         printf("Value %ld is: %d\n",i,reg[i]);
     } 
 
+    printf("program_counter: %u \n", program_counter);
 
-    while (1) {    
+    while (1) {   
+        int PC = (program_counter-start_addr)/4; 
+        printf("PC: %u \n", PC);
         //FETCH INSTRUCTION (1/2)
         int inst_word = memory_rd_w(mem, program_counter);
 
@@ -131,14 +134,18 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
         } else if((opcode ^ LUI) == 0x00) {
             uint32_t rd = ((word << 20) >> 27);
             uint32_t imm = ((word >> 12) << 12);
-
+            printf("LUI \n");
+            printf("LUI rd: %u \n", rd);
             reg[rd] = imm; 
             program_counter += 4;
 
         } else if ((opcode ^ AUIPC) == 0x00) {
+            printf("pc at AUIPC: %u \n", program_counter);
             uint32_t rd = ((word << 20) >> 27);
+            printf("rd: %u \n", rd);
+            printf("word at AUIPC: %u \n", word);
             uint32_t imm = ((word >> 12) << 12);
-
+            printf("AUIPC \n");
             reg[rd] = program_counter + imm;
             program_counter += 4; 
 
@@ -155,11 +162,17 @@ long int simulate(struct memory *mem, struct assembly *as, int start_addr, FILE 
             program_counter = total_offset;   
 
         } else if ((opcode ^ JALR) == 0x00) {
+            printf("ra before JALR: %u \n", reg[1]); 
+            printf("WORD AT JALR: %u \n", word);
             uint32_t rd = ((word << 20) >> 27);
+            printf("RD: %u \n", rd);
             uint32_t rs1 = ((word << 12) >> 27);
-            uint32_t imm = (((int)word) >> 20);
-            int total_offset = (imm + rs1);
+            printf("rs1: %u \n", rs1);
+            uint32_t imm = (((int32_t)word) >> 20);
+            printf("imm: %u \n", imm);
+            uint32_t total_offset = imm + rs1;
             reg[rd] = program_counter + 4; 
+            printf("total_offset: %u \n", total_offset);
             program_counter = total_offset;
 
         } else if ((opcode ^ BRANCH_INST) == 0x00) {
