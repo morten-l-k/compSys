@@ -1,0 +1,22 @@
+
+auipc_lui.riscv:     file format elf32-littleriscv
+
+Contents of section .text:
+ 10074 b7850c00 17060500 93683000 73000000  .........h0.s...
+Contents of section .riscv.attributes:
+ 0000 41270000 00726973 63760001 1d000000  A'...riscv......
+ 0010 05727633 32693270 315f6d32 70305f7a  .rv32i2p1_m2p0_z
+ 0020 6d6d756c 31703000                    mmul1p0.        
+
+auipc_lui.riscv:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00010074 <_start>:
+   10074:	000c85b7          	lui	a1,0xc8
+   10078:	00050617          	auipc	a2,0x50
+
+0001007c <end>:
+   1007c:	00306893          	or	a7,zero,3
+   10080:	00000073          	ecall
