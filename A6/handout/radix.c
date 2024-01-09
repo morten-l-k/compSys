@@ -154,10 +154,10 @@ void main(int argc, char* argv[]) {
   }
   // process numbers
   while (1) {
-    int numbers[100];
-    int out_numbers[100];
+    int numbers[2800];
+    int out_numbers[2800];
     // read numbers until we don't get more
-    int read = read_int_buffer(in_file, numbers, 100);
+    int read = read_int_buffer(in_file, numbers, 2800);
     if (read <= 0) break;
     // process numbers read, one at a time
     for (int n = 0; n < read; ++n) {
@@ -165,8 +165,8 @@ void main(int argc, char* argv[]) {
         // negative number -N means take(N):
         int limit = -numbers[n];
         while (limit > 0) {
-          // take, then output up till 100 numbers at a time
-          int take_max = limit < 100 ? limit : 100;
+          // take, then output up till 1000 numbers at a time
+          int take_max = limit < 2800 ? limit : 2800;
           int taken = take_numbers(out_numbers, take_max);
           int to_write = taken;
           // output numbers:
